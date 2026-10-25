@@ -1,0 +1,130 @@
+@import 'tailwindcss';
+
+/* Only scan Tarn sources; GOONOMICS classes stay in its own stylesheet. */
+@source not '../components';
+@source not '../lib';
+@source not '../App.tsx';
+@source not '../App.test.tsx';
+@source not '../../index.html';
+
+/*
+ * Tarn tokens. Tune the palette here; every component uses these names.
+ * parchment and cream are surfaces, forest is the action color, gold marks earned things only.
+ */
+@theme {
+  --color-parchment: #f5f1e8;
+  --color-cream: #faf8f2;
+  --color-forest: #244b3a;
+  --color-forest-deep: #1a3a2c;
+  --color-sage: #a7b99a;
+  --color-sage-soft: #e3e9dc;
+  --color-moss: #788b68;
+  --color-stone: #d8d4c8;
+  --color-stone-soft: #ebe7dc;
+  --color-ink: #202720;
+  --color-ink-soft: #4f5a4e;
+  --color-gold: #c6a66b;
+  --color-gold-soft: #efe4cc;
+  --color-clay: #9a5b45;
+  --color-dusk: #1c2b25;
+  --color-dusk-2: #2c3f36;
+  --color-mist: #dfe6d6;
+
+  --font-serif: 'Newsreader Variable', 'Iowan Old Style', Georgia, serif;
+  --font-sans: 'Hanken Grotesk Variable', ui-sans-serif, system-ui, sans-serif;
+
+  --shadow-soft: 0 1px 2px rgb(32 39 32 / 0.04), 0 8px 24px -12px rgb(32 39 32 / 0.12);
+
+  --animate-breathe-in: breathe-in var(--breath-in, 4s) ease-in-out forwards;
+  --animate-rise: rise 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+}
+
+html {
+  background: var(--color-parchment);
+  color: var(--color-ink);
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  margin: 0;
+  background: var(--color-parchment);
+  font-family: var(--font-sans);
+  font-feature-settings: 'ss01';
+  -webkit-font-smoothing: antialiased;
+}
+::selection {
+  background: var(--color-sage);
+  color: var(--color-ink);
+}
+:focus-visible {
+  outline: 2px solid var(--color-forest);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+.serif {
+  font-family: var(--font-serif);
+  font-optical-sizing: auto;
+}
+.press {
+  transition: transform 0.15s ease, background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+.press:active {
+  transform: scale(0.98);
+}
+/*
+ * The floating tab bar is the only translucent surface (Apple HIG: glass belongs to the navigation
+ * layer, used sparingly). Without backdrop-filter, or when the user prefers less transparency,
+ * it becomes a solid ivory bar so labels stay readable.
+ */
+.glass {
+  background: rgb(250 248 242 / 0.94);
+  border: 1px solid rgb(216 212 200 / 0.9);
+  box-shadow: 0 1px 1px rgb(32 39 32 / 0.04), 0 12px 32px -12px rgb(32 39 32 / 0.28);
+}
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass {
+    background: rgb(250 248 242 / 0.72);
+    -webkit-backdrop-filter: blur(18px) saturate(1.6);
+    backdrop-filter: blur(18px) saturate(1.6);
+  }
+}
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  .glass {
+    background: var(--color-cream);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    border-color: var(--color-moss);
+  }
+}
+.pb-safe {
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+}
+.pt-safe {
+  padding-top: env(safe-area-inset-top);
+}
+.bottom-safe {
+  bottom: max(0.75rem, env(safe-area-inset-bottom));
+}
+/* Room so the floating bar never covers the end of a page. */
+.pad-nav {
+  padding-bottom: calc(6.5rem + env(safe-area-inset-bottom));
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
