@@ -1,25 +1,24 @@
-import { Check, Pencil, Share2, Trash2 } from 'lucide-react'
+import { ArrowRight, Pencil, Share2, Trash2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { BadgeEmblem } from '../components/Art'
 import { MonthCalendar } from '../components/Calendar'
 import { CheckInCard, SetbackSheet } from '../components/CheckIn'
 import { GoalTabs, useSelectedGoal } from '../components/GoalPicker'
-import { Journal, Patterns, RealTalk } from '../components/Reflect'
-import { PromptSheet } from '../components/Routines'
+import { Patterns, RealTalk } from '../components/Reflect'
+import { Link } from '../router'
 import { ShareSheet } from '../components/ShareCard'
 import { Button, Card, H2, Muted, Sheet, Stat, TextArea, TextField, useToast } from '../components/ui'
-import { addJournal, addMindful, removeEvent, updateEvent } from '../lib/actions'
+import { removeEvent, updateEvent } from '../lib/actions'
 import { milestoneStates, practiceStates, type BadgeState } from '../lib/badges'
-import { PROMPTS } from '../lib/catalog'
 import { isDayKey, longDate, shortDate } from '../lib/dates'
 import { checkInConsistency, checkInCount, confirmsToday, earliestStart, goalStats, routineConsistency, setbackDays, workedThrough } from '../lib/progress'
 import type { DayKey, GoalEvent } from '../lib/types'
 import { useStore } from '../store'
 
-type Segment = 'progress' | 'reflect' | 'learn'
+type Segment = 'progress' | 'insights' | 'learn'
 const SEGMENTS: { id: Segment; label: string }[] = [
   { id: 'progress', label: 'Progress' },
-  { id: 'reflect', label: 'Reflect' },
+  { id: 'insights', label: 'Insights' },
   { id: 'learn', label: 'Learn' },
 ]
 
@@ -49,7 +48,7 @@ export function Journey() {
       </div>
       <div role="tabpanel" id={`panel-${segment}`} aria-labelledby={`seg-${segment}`}>
         {segment === 'progress' && <Progress />}
-        {segment === 'reflect' && <Reflect />}
+        {segment === 'insights' && <Insights />}
         {segment === 'learn' && <RealTalk />}
       </div>
     </div>
@@ -198,39 +197,13 @@ function Progress() {
   )
 }
 
-function Reflect() {
-  const { data, apply, today } = useStore()
-  const [toast, say] = useToast()
-  const [prompt, setPrompt] = useState<keyof typeof PROMPTS | null>(null)
+function Insights() {
   return (
     <div className="space-y-5">
-      {toast}
-      <Card>
-        <H2>A moment to reflect</H2>
-        <div className="mt-4 grid gap-2 sm:grid-cols-3">
-          {(Object.keys(PROMPTS) as (keyof typeof PROMPTS)[]).map((k) => {
-            const has = data.journal.some((j) => j.kind === k && j.date === today)
-            return (
-              <button key={k} type="button" onClick={() => setPrompt(k)} className="press min-h-14 rounded-2xl border border-stone bg-parchment px-4 py-3 text-left hover:border-moss">
-                <span className="flex items-center gap-1.5 font-semibold text-ink">
-                  {PROMPTS[k].title}
-                  {has && <Check size={16} className="text-forest" aria-label="done today" />}
-                </span>
-              </button>
-            )
-          })}
-        </div>
-      </Card>
       <Patterns />
-      <Journal />
-      <PromptSheet
-        kind={prompt}
-        onClose={() => setPrompt(null)}
-        onSave={(kind, text, seconds) => {
-          apply((d) => addMindful(addJournal(d, { date: today, kind, mood: null, stress: null, sleep: null, focus: null, urge: null, text, helped: '' }), { date: today, kind: 'reflection', seconds }))
-          say('Saved to your journal.')
-        }}
-      />
+      <Link to="journal" className="press flex min-h-14 items-center justify-between gap-3 rounded-[1.75rem] border border-stone/80 bg-cream px-5 font-semibold text-forest">
+        Write in your journal <ArrowRight size={18} aria-hidden />
+      </Link>
     </div>
   )
 }
@@ -240,7 +213,7 @@ function BadgeGrid({ badges }: { badges: BadgeState[] }) {
     <ul className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-5">
       {badges.map((b) => (
         <li key={b.id} className={`flex flex-col items-center rounded-2xl px-2 py-4 text-center ${b.earned ? 'bg-gold-soft/45' : 'bg-parchment'}`}>
-          <BadgeEmblem glyph={b.glyph} earned={b.earned} progress={b.progress} size={56} />
+          <BadgeEmblem glyph={b.glyph} image={b.image} earned={b.earned} progress={b.progress} size={64} />
           <p className={`mt-2 text-sm font-semibold ${b.earned ? 'text-ink' : 'text-ink-soft'}`}>{b.name}</p>
           <p className="mt-0.5 text-xs leading-snug text-ink-soft">{b.earned ? (b.earnedOn ? `Earned ${shortDate(b.earnedOn)}` : 'Earned') : b.progressLabel}</p>
           <p className="sr-only">{b.line}</p>

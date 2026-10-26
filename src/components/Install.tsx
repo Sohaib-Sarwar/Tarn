@@ -1,9 +1,9 @@
-import { Download, MoreHorizontal, Plus, Share, X } from 'lucide-react'
-import { useState } from 'react'
+import { Check, Download, MoreHorizontal, Plus, Share, X } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { dismissInvite, promptInstall, useInstall, type InstallState } from '../install'
 import { useStore } from '../store'
 import { TarnMark } from './Art'
-import { Button } from './ui'
+import { Button, Sheet } from './ui'
 
 /** Platform specific steps. Only shown where they are accurate. */
 export function InstallSteps({ state }: { state: InstallState }) {
@@ -135,5 +135,101 @@ export function InstallPanel() {
         </p>
       )}
     </div>
+  )
+}
+
+/**
+ * The install popup. It appears once per session on Today, a moment after the app opens, whenever
+ * this browser can really install Tarn: Chromium has handed us its install event (the button then
+ * opens the browser's own install dialog), or the device is an iPhone, iPad or Mac with Safari's Add
+ * to Home Screen. It never appears inside the installed app, and "Not now" turns it off for good.
+ */
+export function InstallPopup() {
+  const state = useInstall()
+  const [open, setOpen] = useState(false)
+  const [result, setResult] = useState<string | null>(null)
+  const eligible = !state.installed && !state.dismissed && state.supported
+
+  useEffect(() => {
+    if (!eligible) return
+    let seen = false
+    try {
+      seen = sessionStorage.getItem('tarn.install.seen') === '1'
+    } catch {
+      // Storage blocked: show it, the dismissal still works for this page.
+    }
+    if (seen) return
+    const t = window.setTimeout(() => {
+      setOpen(true)
+      try {
+        sessionStorage.setItem('tarn.install.seen', '1')
+      } catch {
+        // Ignore.
+      }
+    }, 1800)
+    return () => window.clearTimeout(t)
+  }, [eligible])
+
+  if (!open || state.installed) return null
+  const close = () => setOpen(false)
+  return (
+    <Sheet
+      open
+      onClose={close}
+      title="Install Tarn"
+      footer={
+        <div className="flex flex-wrap justify-end gap-2">
+          <Button
+            tone="ghost"
+            onClick={() => {
+              dismissInvite()
+              close()
+            }}
+          >
+            Not now
+          </Button>
+          {state.canPrompt && (
+            <Button
+              onClick={async () => {
+                const r = await promptInstall()
+                if (r === 'accepted') close()
+                else setResult(r === 'dismissed' ? 'No problem. You can install Tarn later from Profile.' : 'This browser did not open its install dialog. Try its menu, or Profile later.')
+              }}
+            >
+              <Download size={16} aria-hidden /> Install app
+            </Button>
+          )}
+        </div>
+      }
+    >
+      <div className="flex items-center gap-4">
+        <TarnMark size={64} />
+        <div>
+          <p className="serif text-2xl leading-tight text-ink">Keep your space close.</p>
+          <p className="mt-1 text-ink-soft">Open your daily practice like an app.</p>
+        </div>
+      </div>
+      <ul className="mt-5 space-y-2 text-sm text-ink">
+        <li className="flex gap-2">
+          <Check size={18} className="shrink-0 text-forest" aria-hidden /> Opens full screen from your Home Screen
+        </li>
+        <li className="flex gap-2">
+          <Check size={18} className="shrink-0 text-forest" aria-hidden /> Works offline, even in a difficult moment
+        </li>
+        <li className="flex gap-2">
+          <Check size={18} className="shrink-0 text-forest" aria-hidden /> Same privacy: everything stays on this device
+        </li>
+      </ul>
+      {!state.canPrompt && (
+        <div className="mt-5 rounded-2xl bg-parchment p-4">
+          <InstallSteps state={state} />
+        </div>
+      )}
+      {result && (
+        <p role="status" className="mt-4 text-sm text-ink-soft">
+          {result}
+        </p>
+      )}
+    </Sheet>
   )
 }

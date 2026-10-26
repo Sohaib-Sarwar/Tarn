@@ -11,7 +11,8 @@ export async function copyText(text: string): Promise<boolean> {
 export async function renderPng(node: HTMLElement, scale = 2): Promise<Blob> {
   const { domToBlob } = await import('modern-screenshot')
   await document.fonts?.ready
-  return domToBlob(node, { scale, type: 'image/png', backgroundColor: '#f5f1e8' })
+  const bg = getComputedStyle(document.documentElement).getPropertyValue('--color-parchment').trim() || '#e7e5dd'
+  return domToBlob(node, { scale, type: 'image/png', backgroundColor: bg })
 }
 
 export function downloadBlob(blob: Blob, filename: string) {

@@ -1,12 +1,21 @@
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { Shell } from './components/Shell'
 import { TarnMark } from './components/Art'
 import type { Storage } from './lib/storage'
 import { Onboarding } from './pages/Onboarding'
 import { Today } from './pages/Today'
-import { Journey } from './pages/Journey'
-import { Calm } from './pages/Calm'
-import { Profile } from './pages/Profile'
+
+
+
+
+
+// Screens other than Today load on demand; the service worker still caches every chunk for offline use.
+const Journey = lazy(() => import('./pages/Journey').then((m) => ({ default: m.Journey })))
+const Calm = lazy(() => import('./pages/Calm').then((m) => ({ default: m.Calm })))
+const Profile = lazy(() => import('./pages/Profile').then((m) => ({ default: m.Profile })))
+const Journal = lazy(() => import('./pages/Journal').then((m) => ({ default: m.Journal })))
+const Landing = lazy(() => import('./pages/Landing').then((m) => ({ default: m.Landing })))
+const Terms = lazy(() => import('./pages/Terms').then((m) => ({ default: m.Terms })))
 import { navigate, useRoute } from './router'
 import { TarnProvider, useStore } from './store'
 
@@ -47,9 +56,10 @@ function Screens() {
 
   useEffect(() => {
     if (status !== 'ready') return
-    // Calm is always reachable, even before onboarding: help first, setup later.
-    if (!onboarded && route !== 'welcome' && route !== 'calm' && route !== 'profile') navigate('welcome', { replace: true })
-    if (onboarded && route === 'welcome') navigate('today', { replace: true })
+    // Calm and the terms are always reachable, even before onboarding: help first, setup later.
+    const open = ['welcome', 'start', 'calm', 'terms', 'profile']
+    if (!onboarded && !open.includes(route)) navigate('welcome', { replace: true })
+    if (onboarded && (route === 'welcome' || route === 'start')) navigate('today', { replace: true })
   }, [status, onboarded, route])
 
   useEffect(() => {
@@ -68,6 +78,8 @@ function Screens() {
   }
 
   if (route === 'calm') return <Calm />
+  if (route === 'terms') return <Terms />
+  if (!onboarded && route === 'welcome') return <Landing />
   if (!onboarded && route !== 'profile') return <Onboarding />
 
   return (
@@ -89,6 +101,7 @@ function Screens() {
       )}
       {route === 'today' && <Today />}
       {route === 'journey' && <Journey />}
+      {route === 'journal' && <Journal />}
       {route === 'profile' && <Profile />}
     </Shell>
   )
@@ -98,7 +111,9 @@ export default function App({ storage }: { storage?: Storage }) {
   return (
     <TarnProvider storage={storage}>
       <UpdateBanner />
-      <Screens />
+      <Suspense fallback={<div className="min-h-dvh bg-parchment" />}>
+        <Screens />
+      </Suspense>
     </TarnProvider>
   )
 }

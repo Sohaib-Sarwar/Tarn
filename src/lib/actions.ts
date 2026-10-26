@@ -61,6 +61,7 @@ export interface OnboardingResult {
   ageRange?: Profile['ageRange']
   goiNote?: number | null
   routines?: Profile['routines']
+  termsAcceptedAt?: string | null
   drafts: GoalDraft[]
   startDate: string
   targetDays: number | null
@@ -80,6 +81,7 @@ export function completeOnboarding(data: TarnData, r: OnboardingResult, now = ne
       ageRange: r.ageRange ?? data.profile.ageRange,
       goiNote: r.goiNote ?? data.profile.goiNote,
       routines: r.routines ?? data.profile.routines,
+      termsAcceptedAt: r.termsAcceptedAt ?? data.profile.termsAcceptedAt ?? now.toISOString(),
       wants: r.wants,
       reason: r.reason.trim().slice(0, 500),
       primaryGoalId: data.profile.primaryGoalId ?? goals[0]?.id ?? null,

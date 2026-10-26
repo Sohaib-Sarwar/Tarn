@@ -14,8 +14,8 @@
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.node.json",
     "test": "vitest run",
     "test:watch": "vitest",
-    "icons": "node scripts/make-icons.mjs",
-    "art": "node scripts/process-art.mjs"
+    "art": "node scripts/process-art.mjs",
+    "og": "node scripts/make-og.mjs"
   },
   "dependencies": {
     "lucide-react": "^1.61.0",

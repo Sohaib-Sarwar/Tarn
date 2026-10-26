@@ -120,6 +120,27 @@ export function TarnProvider({ children, storage: given }: { children: ReactNode
     document.title = data.profile.appTitle || 'Tarn'
   }, [data.profile.appTitle])
 
+  // Theme: System follows the device live; the choice is mirrored for public/theme.js so the next
+  // load paints the right colors before the app starts.
+  const theme = data.profile.theme
+  useEffect(() => {
+    if (status !== 'ready') return
+    const mq = window.matchMedia?.('(prefers-color-scheme: dark)')
+    const apply = () => {
+      const dark = theme === 'dark' || (theme === 'system' && !!mq?.matches)
+      document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light')
+    }
+    apply()
+    try {
+      localStorage.setItem('tarn.theme', theme)
+    } catch {
+      // Storage blocked: the theme still applies for this visit.
+    }
+    if (theme !== 'system') return
+    mq?.addEventListener?.('change', apply)
+    return () => mq?.removeEventListener?.('change', apply)
+  }, [theme, status])
+
   const value = useMemo<Store>(
     () => ({ status, data, today, storageKind: storage.current?.kind ?? null, skipped, saveError, apply, replaceAll, deleteEverything }),
     [status, data, today, skipped, saveError, apply, replaceAll, deleteEverything],

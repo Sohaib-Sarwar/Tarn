@@ -42,6 +42,8 @@ export interface BadgeState {
   progress: number
   /** Plain words for what is left, e.g. "4 of 7 days". */
   progressLabel: string
+  /** Generated badge art for milestones (public/art/badges). */
+  image?: string
 }
 
 /** The best streak across all goals keeps milestones earned even after a reset. */
@@ -65,6 +67,7 @@ export function milestoneStates(data: TarnData, today: DayKey): BadgeState[] {
       name: m.name,
       line: m.line,
       glyph: m.glyph,
+      image: milestoneImage(m.id),
       kind: 'milestone',
       earned,
       earnedOn,
@@ -73,6 +76,8 @@ export function milestoneStates(data: TarnData, today: DayKey): BadgeState[] {
     }
   })
 }
+
+export const milestoneImage = (id: string) => `/art/badges/${id}.webp`
 
 /** The next streak milestone for one goal's current streak. */
 export function nextMilestone(currentStreak: number): Milestone | null {

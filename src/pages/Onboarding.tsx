@@ -1,7 +1,8 @@
 import { ArrowLeft, Lock, Minus, Plus } from 'lucide-react'
 import { useId, useState } from 'react'
-import { Landscape, Wordmark } from '../components/Art'
-import { Button, Chip, Choice, TextField } from '../components/ui'
+import { Wordmark } from '../components/Art'
+import { Button, Chip, Choice, Sheet, TextField } from '../components/ui'
+import { TermsContent } from './Terms'
 import { completeOnboarding, draftsFor, newId, type GoalDraft } from '../lib/actions'
 import { AGE_RANGES, GOAL_CHOICES, ROUTINE_CATALOG, SUGGESTED_INTENTIONS, type GoalChoice } from '../lib/catalog'
 import type { AgeRange } from '../lib/types'
@@ -10,7 +11,7 @@ import { useStore } from '../store'
 import { clearHandoff, readHandoff } from '../handoff'
 
 const STEPS = ['about', 'goal', 'intention'] as const
-type Step = 'welcome' | (typeof STEPS)[number]
+type Step = (typeof STEPS)[number]
 
 const LENGTHS: { days: number | null; label: string }[] = [
   { days: 7, label: '7 days' },
@@ -23,7 +24,9 @@ const LENGTHS: { days: number | null; label: string }[] = [
 export function Onboarding() {
   const { apply, today } = useStore()
   const [handoff] = useState(readHandoff)
-  const [step, setStep] = useState<Step>('welcome')
+  const [step, setStep] = useState<Step>('about')
+  const [agreed, setAgreed] = useState(false)
+  const [termsOpen, setTermsOpen] = useState(false)
   const [name, setName] = useState('')
   const [age, setAge] = useState<AgeRange | null>(handoff?.ageRange ?? null)
   const [keepGoi, setKeepGoi] = useState(handoff?.goi != null)
@@ -62,6 +65,7 @@ export function Onboarding() {
         drafts,
         startDate: today,
         targetDays,
+        termsAcceptedAt: new Date().toISOString(),
         wants: [],
         reason: '',
       }),
@@ -70,37 +74,11 @@ export function Onboarding() {
     navigate('today', { replace: true })
   }
 
-  if (step === 'welcome') {
-    return (
-      <div className="relative min-h-dvh overflow-hidden bg-parchment">
-        <Landscape className="absolute inset-0 h-full w-full" />
-        <div className="absolute inset-x-0 bottom-0 h-[62%] bg-gradient-to-t from-parchment via-parchment/92 to-transparent lg:hidden" aria-hidden />
-        <div className="pt-safe relative px-6 pt-6 lg:px-12 lg:pt-10">
-          <Wordmark />
-        </div>
-        <div className="relative mx-auto flex min-h-[calc(100dvh-5rem)] max-w-xl flex-col justify-end px-6 pb-[max(2.5rem,env(safe-area-inset-bottom))] lg:mx-12 lg:max-w-md lg:justify-center lg:pb-24">
-          <div className="lg:rounded-[2rem] lg:bg-parchment/92 lg:p-10 lg:shadow-soft">
-            {handoff && <p className="mb-3 text-sm font-medium text-moss">Continuing from GOONOMICS</p>}
-            <h1 className="serif text-[2.6rem] leading-[1.05] tracking-[-0.01em] text-balance text-ink sm:text-5xl">Come back to yourself.</h1>
-            <p className="mt-4 text-lg leading-snug text-ink-soft">Small steps. More intention. One day at a time.</p>
-            <Button size="lg" className="mt-8 w-full tracking-wide sm:w-auto" onClick={() => go('about')}>
-              BEGIN MY JOURNEY
-            </Button>
-            <p className="mt-5 text-sm text-ink-soft">
-              For adults 18+. No account. Stays on this device.{' '}
-              <a href="/" className="font-medium text-forest underline underline-offset-2">
-                Back to GOONOMICS
-              </a>
-            </p>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
   const next =
     step === 'about' ? (
-      <Button onClick={() => go('goal')}>{name.trim() || age ? 'Continue' : 'Skip for now'}</Button>
+      <Button disabled={!agreed} onClick={() => go('goal')}>
+        Continue
+      </Button>
     ) : step === 'goal' ? (
       <Button disabled={!goalValid} onClick={() => go('intention')}>
         Continue
@@ -114,8 +92,11 @@ export function Onboarding() {
   return (
     <div className="min-h-dvh bg-parchment">
       <div className="pt-safe mx-auto max-w-xl px-5 pt-4 pb-36 sm:px-6 lg:pt-12">
+        <div className="mb-4 flex justify-center">
+          <Wordmark size={24} />
+        </div>
         <div className="flex items-center justify-between gap-4">
-          <button type="button" onClick={() => go(index === 0 ? 'welcome' : STEPS[index - 1]!)} className="press -ml-2 inline-flex min-h-11 items-center gap-1.5 rounded-full px-3 text-sm font-semibold text-forest hover:bg-sage-soft">
+          <button type="button" onClick={() => (index === 0 ? navigate('welcome') : go(STEPS[index - 1]!))} className="press -ml-2 inline-flex min-h-11 items-center gap-1.5 rounded-full px-3 text-sm font-semibold text-forest hover:bg-sage-soft">
             <ArrowLeft size={18} aria-hidden /> Back
           </button>
           <ol className="flex gap-1.5" aria-label={`Step ${index + 1} of ${STEPS.length}`}>
@@ -127,6 +108,7 @@ export function Onboarding() {
 
         {step === 'about' && (
           <section className="mt-8 animate-rise" aria-labelledby="ob-about">
+            {handoff && <p className="mb-2 text-sm font-medium text-moss">Continuing from GOONOMICS</p>}
             <h1 id="ob-about" className="serif text-[2rem] leading-tight text-ink">
               What should we call you?
             </h1>
@@ -157,6 +139,16 @@ export function Onboarding() {
                 <Lock size={18} className="mt-0.5 shrink-0 text-forest" aria-hidden />
                 <span>What you enter stays in this browser on this device. Nothing is uploaded, and there is no account. You can export or delete it in Profile.</span>
               </p>
+              <label className="flex items-start gap-3 rounded-2xl border border-stone bg-cream p-4 text-sm leading-relaxed text-ink">
+                <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} className="mt-0.5 size-5 shrink-0 accent-forest" />
+                <span>
+                  I am 18 or older and I agree to the{' '}
+                  <button type="button" onClick={() => setTermsOpen(true)} className="font-semibold text-forest underline underline-offset-2">
+                    Terms and privacy
+                  </button>
+                  : my records are stored only on this device, and Tarn is not medical care.
+                </span>
+              </label>
             </div>
           </section>
         )}
@@ -242,6 +234,9 @@ export function Onboarding() {
       <div className="pb-safe fixed inset-x-0 bottom-0 z-30 border-t border-stone/70 bg-parchment/95">
         <div className="mx-auto flex max-w-xl justify-end px-5 pt-3 sm:px-6">{next}</div>
       </div>
+      <Sheet open={termsOpen} onClose={() => setTermsOpen(false)} title="Terms and privacy" footer={<div className="flex justify-end"><Button onClick={() => (setAgreed(true), setTermsOpen(false))}>I agree</Button></div>}>
+        <TermsContent />
+      </Sheet>
     </div>
   )
 }

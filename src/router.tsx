@@ -3,7 +3,7 @@ import { useEffect, useState, type AnchorHTMLAttributes, type MouseEvent } from 
 /** A tiny path router. Tarn is a single page app served from the site root. */
 export const BASE = ''
 
-export type Route = 'welcome' | 'today' | 'journey' | 'calm' | 'profile'
+export type Route = 'welcome' | 'start' | 'today' | 'journey' | 'calm' | 'journal' | 'profile' | 'terms'
 
 /** V1.0 paths keep working: they open the screen that now holds the same feature. */
 const ALIASES: Record<string, Route> = {
@@ -11,6 +11,9 @@ const ALIASES: Record<string, Route> = {
   journey: 'journey',
   calm: 'calm',
   profile: 'profile',
+  journal: 'journal',
+  terms: 'terms',
+  start: 'start',
   urge: 'calm',
   insights: 'journey',
   routines: 'profile',

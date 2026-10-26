@@ -126,6 +126,8 @@ export interface JournalEntry {
   createdAt: string
 }
 
+export type Theme = 'system' | 'light' | 'dark'
+
 export type AgeRange = '18-24' | '25-34' | '35-44' | '45-54' | '55+'
 
 export type Want = 'focus' | 'time' | 'routines' | 'control' | 'offline' | 'sleep' | 'presence' | 'alignment' | 'other'
@@ -145,6 +147,11 @@ export interface Profile {
   ageRange: AgeRange | null
   /** GOI brought over from GOONOMICS with consent. Entertainment only, shown as a note. */
   goiNote: number | null
+  /** Optional profile photo as a small JPEG data URL, resized on this device. */
+  photo: string | null
+  theme: Theme
+  /** When the person accepted the Terms during onboarding. */
+  termsAcceptedAt: string | null
   wants: Want[]
   /** The user's own reason, shown in the urge toolkit. */
   reason: string
@@ -181,6 +188,9 @@ export function emptyProfile(now = new Date()): Profile {
     name: '',
     ageRange: null,
     goiNote: null,
+    photo: null,
+    theme: 'system',
+    termsAcceptedAt: null,
     wants: [],
     reason: '',
     routines: [],

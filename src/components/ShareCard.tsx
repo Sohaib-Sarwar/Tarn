@@ -102,7 +102,7 @@ export function ShareSheet({ open, onClose, say }: { open: boolean; onClose: () 
               <div className="mt-12 flex flex-1 flex-col items-center px-10">
                 {on('badge') && badge && (
                   <>
-                    <BadgeEmblem glyph={badge.glyph} earned size={150} />
+                    <BadgeEmblem glyph={badge.glyph} image={badge.image} earned size={170} />
                     <p className="serif mt-6 text-[2.6rem] leading-tight text-ink">{badge.name}</p>
                   </>
                 )}

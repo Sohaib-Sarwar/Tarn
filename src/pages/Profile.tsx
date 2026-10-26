@@ -1,50 +1,413 @@
-import { CalendarPlus, Check, Download, ShieldCheck, Trash2, Upload } from 'lucide-react'
+import { Bell, Camera, ChevronRight, Download, FileText, Heart, Leaf, Lock, Moon, Pencil, ShieldCheck, Smartphone, Target, Trash2, Upload } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
-import { Button, Card, Chip, H2, Muted, Sheet, TextArea, TextField, useToast } from '../components/ui'
-import { LimitStepper } from './Onboarding'
+import { Avatar } from '../components/Avatar'
 import { InstallPanel } from '../components/Install'
 import { RoutineBuilder } from '../components/Routines'
-import { addGoal, deleteGoal, setRoutines, toggleRoutine, updateGoal, updateProfile, type GoalDraft } from '../lib/actions'
+import { Button, Chip, Muted, Sheet, TextArea, TextField, useToast } from '../components/ui'
+import { LimitStepper } from './Onboarding'
+import { addGoal, deleteGoal, setRoutines, updateGoal, updateProfile, type GoalDraft } from '../lib/actions'
 import { exportFilename, exportJson, parseImport } from '../lib/backup'
-import { AGE_RANGES, KIND_DEFAULT_LABEL, KIND_NAME, MAX_ROUTINES, WANTS } from '../lib/catalog'
+import { AGE_RANGES, KIND_DEFAULT_LABEL, KIND_NAME } from '../lib/catalog'
 import { isDayKey, longDate } from '../lib/dates'
+import { resizePhoto } from '../lib/photo'
 import { reminderIcs } from '../lib/reminders'
 import { downloadBlob } from '../lib/share'
 import { isPersisted, requestPersistence } from '../lib/storage'
-import type { Goal, GoalKind, TarnData } from '../lib/types'
+import type { AgeRange, Goal, GoalKind, TarnData, Theme } from '../lib/types'
+import { useInstall } from '../install'
 import { navigate } from '../router'
 import { useStore } from '../store'
 
 const TITLES = ['Tarn', 'Daily', 'Notes', 'Focus']
+type Panel = 'edit' | 'goals' | 'intentions' | 'appearance' | 'install' | 'reminders' | 'support' | 'data' | null
 
+/**
+ * Profile is just you: photo, name and an Edit button. Everything else sits in quiet rows that each
+ * open one focused sheet, so nothing competes for attention on the page itself.
+ */
 export function Profile() {
-  const { data, apply, today, storageKind, replaceAll, deleteEverything } = useStore()
+  const { data, apply } = useStore()
   const [toast, say] = useToast()
+  const [panel, setPanel] = useState<Panel>(null)
+  const p = data.profile
+  const install = useInstall()
+  const close = () => setPanel(null)
+  const age = AGE_RANGES.find((a) => a.id === p.ageRange)?.label
+
+  const rows: { id: Exclude<Panel, 'edit' | null> | 'terms'; icon: typeof Target; title: string; value: string }[] = [
+    { id: 'goals', icon: Target, title: 'Goals', value: data.goals.map((g) => g.label).join(', ') || 'None yet' },
+    { id: 'intentions', icon: Leaf, title: 'Daily intentions', value: p.routines[0]?.label ?? 'Choose one' },
+    { id: 'appearance', icon: Moon, title: 'Appearance', value: p.theme === 'system' ? 'Match device' : p.theme === 'dark' ? 'Dark' : 'Light' },
+    { id: 'install', icon: Smartphone, title: 'Install Tarn', value: install.installed ? 'Installed' : 'Add to Home Screen' },
+    { id: 'reminders', icon: Bell, title: 'Reminders', value: p.reminderTime ? `Daily at ${p.reminderTime}` : 'Off' },
+    { id: 'support', icon: Heart, title: 'Reason and support', value: p.contact ? `Trusted: ${p.contact.name || p.contact.address}` : 'Your reason, a trusted person' },
+    { id: 'data', icon: ShieldCheck, title: 'Privacy and data', value: 'Export, import, delete' },
+    { id: 'terms', icon: FileText, title: 'Terms and privacy', value: 'What Tarn stores and why' },
+  ]
+
+  return (
+    <div className="space-y-5">
+      {toast}
+      <h1 className="sr-only">Profile</h1>
+      <section aria-label="You" className="relative overflow-hidden rounded-[2rem] bg-cream px-5 pt-8 pb-6 text-center shadow-soft">
+        <div className="absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-sage-soft to-transparent" aria-hidden />
+        <div className="relative mx-auto w-fit">
+          <Avatar size={96} />
+          <button type="button" onClick={() => setPanel('edit')} aria-label="Change photo" className="press absolute -right-1 -bottom-1 grid size-11 place-items-center rounded-full bg-forest text-cream shadow-soft">
+            <Camera size={18} aria-hidden />
+          </button>
+        </div>
+        <p className="serif mt-4 text-2xl leading-tight break-words text-ink">{p.name || 'Add your name'}</p>
+        <p className="mt-1 text-sm text-ink-soft">{age ? `${age} · ` : ''}Private to this device</p>
+        <Button tone="quiet" className="mt-4" onClick={() => setPanel('edit')}>
+          <Pencil size={15} aria-hidden /> Edit profile
+        </Button>
+      </section>
+
+      <nav aria-label="Profile settings" className="overflow-hidden rounded-[1.75rem] border border-stone/80 bg-cream">
+        <ul className="divide-y divide-stone/80">
+          {rows.map(({ id, icon: Icon, title, value }) => (
+            <li key={id}>
+              <button
+                type="button"
+                onClick={() => (id === 'terms' ? navigate('terms') : setPanel(id))}
+                className="press flex min-h-16 w-full items-center gap-4 px-5 py-3 text-left hover:bg-sage-soft/50"
+              >
+                <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-sage-soft text-forest">
+                  <Icon size={19} aria-hidden />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block font-semibold text-ink">{title}</span>
+                  <span className="block truncate text-sm text-ink-soft">{value}</span>
+                </span>
+                <ChevronRight size={18} className="shrink-0 text-ink-soft" aria-hidden />
+              </button>
+            </li>
+          ))}
+        </ul>
+      </nav>
+
+      <p className="flex items-start gap-2 px-1 text-sm text-ink-soft">
+        <Lock size={15} className="mt-0.5 shrink-0" aria-hidden />
+        Tarn is a self directed habit tool, not medical care. Everything here stays on this device.
+      </p>
+
+      <EditProfileSheet open={panel === 'edit'} onClose={close} say={say} />
+      <GoalsSheet open={panel === 'goals'} onClose={close} say={say} />
+      <RoutineBuilder open={panel === 'intentions'} onClose={close} initial={p.routines} onSave={(rs) => (apply((d) => setRoutines(d, rs)), say('Intentions saved.'))} />
+      <AppearanceSheet open={panel === 'appearance'} onClose={close} />
+      <Sheet open={panel === 'install'} onClose={close} title="Install Tarn">
+        <Muted className="mb-4 text-sm">Open your daily practice from your Home Screen. It works offline and keeps the same privacy.</Muted>
+        <InstallPanel />
+      </Sheet>
+      <RemindersSheet open={panel === 'reminders'} onClose={close} say={say} />
+      <SupportSheet open={panel === 'support'} onClose={close} say={say} />
+      <DataSheet open={panel === 'data'} onClose={close} say={say} />
+    </div>
+  )
+}
+
+function EditProfileSheet({ open, onClose, say }: { open: boolean; onClose: () => void; say: (m: string) => void }) {
+  const { data, apply } = useStore()
+  const p = data.profile
+  const [name, setName] = useState(p.name)
+  const [age, setAge] = useState<AgeRange | null>(p.ageRange)
+  const [photo, setPhoto] = useState<string | null>(p.photo)
+  const [title, setTitle] = useState(p.appTitle)
+  const [error, setError] = useState<string | null>(null)
+  const fileRef = useRef<HTMLInputElement>(null)
+  useEffect(() => {
+    if (!open) return
+    setName(p.name)
+    setAge(p.ageRange)
+    setPhoto(p.photo)
+    setTitle(p.appTitle)
+    setError(null)
+  }, [open, p.name, p.ageRange, p.photo, p.appTitle])
+
+  return (
+    <Sheet
+      open={open}
+      onClose={onClose}
+      title="Edit profile"
+      footer={
+        <div className="flex justify-end gap-2">
+          <Button tone="ghost" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button
+            onClick={() => {
+              apply((d) => updateProfile(d, { name: name.trim().slice(0, 40), ageRange: age, photo, appTitle: title.trim() || 'Tarn' }))
+              onClose()
+              say('Profile saved.')
+            }}
+          >
+            Save
+          </Button>
+        </div>
+      }
+    >
+      <div className="flex items-center gap-4">
+        {photo ? <img src={photo} alt="Your profile photo" className="size-20 shrink-0 rounded-full object-cover" /> : <Avatar size={80} />}
+        <div className="flex flex-wrap gap-2">
+          <Button tone="quiet" size="sm" onClick={() => fileRef.current?.click()}>
+            <Camera size={15} aria-hidden /> {photo ? 'Change photo' : 'Add photo'}
+          </Button>
+          {photo && (
+            <Button tone="ghost" size="sm" onClick={() => setPhoto(null)}>
+              Remove
+            </Button>
+          )}
+        </div>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          className="sr-only"
+          tabIndex={-1}
+          aria-hidden
+          onChange={async (e) => {
+            const f = e.target.files?.[0]
+            e.target.value = ''
+            if (!f) return
+            try {
+              setError(null)
+              setPhoto(await resizePhoto(f))
+            } catch (err) {
+              setError((err as Error).message)
+            }
+          }}
+        />
+      </div>
+      <p className="mt-2 text-xs text-ink-soft">Resized to a small copy on this device. Never uploaded.</p>
+      {error && (
+        <p role="alert" className="mt-2 text-sm text-clay">
+          {error}
+        </p>
+      )}
+      <div className="mt-5 space-y-5">
+        <TextField label="Name or nickname" value={name} onChange={setName} max={40} placeholder="Optional" />
+        <div>
+          <p id="ep-age" className="text-sm font-semibold text-ink">
+            Age range
+          </p>
+          <div className="mt-2 flex flex-wrap gap-2" role="radiogroup" aria-labelledby="ep-age">
+            {AGE_RANGES.map((a) => (
+              <Chip key={a.id} role="radio" selected={age === a.id} onClick={() => setAge(age === a.id ? null : a.id)}>
+                {a.label}
+              </Chip>
+            ))}
+          </div>
+        </div>
+        <div>
+          <p id="ep-title" className="text-sm font-semibold text-ink">
+            Name in the browser tab
+          </p>
+          <p className="text-xs text-ink-soft">For discretion. The installed app is always called Tarn.</p>
+          <div className="mt-2 flex flex-wrap gap-2" role="radiogroup" aria-labelledby="ep-title">
+            {TITLES.map((t) => (
+              <Chip key={t} role="radio" selected={title === t} onClick={() => setTitle(t)}>
+                {t}
+              </Chip>
+            ))}
+          </div>
+        </div>
+        {p.goiNote !== null && (
+          <p className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-parchment px-4 py-3 text-sm text-ink">
+            <span>GOONOMICS note: GOI {p.goiNote}. Entertainment only.</span>
+            <Button tone="ghost" size="sm" onClick={() => apply((d) => updateProfile(d, { goiNote: null }))}>
+              Remove
+            </Button>
+          </p>
+        )}
+      </div>
+    </Sheet>
+  )
+}
+
+function GoalsSheet({ open, onClose, say }: { open: boolean; onClose: () => void; say: (m: string) => void }) {
+  const { data, apply, today } = useStore()
   const [editGoal, setEditGoal] = useState<Goal | null>(null)
   const [adding, setAdding] = useState(false)
+  const p = data.profile
+  return (
+    <>
+      <Sheet
+        open={open && !editGoal && !adding}
+        onClose={onClose}
+        title="Goals"
+        footer={
+          <div className="flex justify-end">
+            <Button tone="quiet" onClick={() => setAdding(true)}>
+              Add a goal
+            </Button>
+          </div>
+        }
+      >
+        {data.goals.length === 0 ? (
+          <Muted>No goals yet.</Muted>
+        ) : (
+          <ul className="divide-y divide-stone">
+            {data.goals.map((g) => (
+              <li key={g.id} className="flex flex-wrap items-center justify-between gap-3 py-3.5">
+                <div className="min-w-0">
+                  <p className="font-semibold text-ink">
+                    {g.label}
+                    {p.primaryGoalId === g.id && data.goals.length > 1 && <span className="ml-2 rounded-full bg-sage-soft px-2 py-0.5 text-xs font-medium text-forest">Shown first</span>}
+                  </p>
+                  <p className="text-sm text-ink-soft">
+                    {KIND_NAME[g.kind]}, {g.mode === 'stop' ? 'stop' : `reduce, up to ${g.weeklyLimit} in 7 days`}. Since {longDate(g.startDate)}. {g.targetDays ? `${g.targetDays} day stretch.` : 'Open ended.'}
+                  </p>
+                </div>
+                <div className="flex gap-1">
+                  {p.primaryGoalId !== g.id && data.goals.length > 1 && (
+                    <Button tone="ghost" size="sm" onClick={() => apply((d) => updateProfile(d, { primaryGoalId: g.id }))}>
+                      Show first
+                    </Button>
+                  )}
+                  <Button tone="quiet" size="sm" onClick={() => setEditGoal(g)} aria-label={`Edit ${g.label}`}>
+                    Edit
+                  </Button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Sheet>
+      <GoalSheet goal={editGoal} onClose={() => setEditGoal(null)} say={say} />
+      <AddGoalSheet
+        open={adding}
+        onClose={() => setAdding(false)}
+        onAdd={(d, target) => {
+          apply((x) => addGoal(x, d, today, target))
+          say('Goal added. It starts today.')
+        }}
+      />
+    </>
+  )
+}
+
+function AppearanceSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const { data, apply } = useStore()
+  const options: { id: Theme; title: string; detail: string }[] = [
+    { id: 'system', title: 'Match device', detail: 'Light by day, dark by night if your device switches.' },
+    { id: 'light', title: 'Light', detail: 'Soft oatmeal and sage, low glare.' },
+    { id: 'dark', title: 'Dark', detail: 'Deep forest tones, gentle on the eyes at night.' },
+  ]
+  return (
+    <Sheet open={open} onClose={onClose} title="Appearance">
+      <div role="radiogroup" aria-label="Theme" className="grid gap-2">
+        {options.map((o) => {
+          const on = data.profile.theme === o.id
+          return (
+            <button
+              key={o.id}
+              type="button"
+              role="radio"
+              aria-checked={on}
+              onClick={() => apply((d) => updateProfile(d, { theme: o.id }))}
+              className={`press flex items-center gap-4 rounded-2xl border px-4 py-3.5 text-left ${on ? 'border-forest bg-sage-soft' : 'border-stone bg-cream hover:border-moss'}`}
+            >
+              <span className={`grid size-12 shrink-0 overflow-hidden rounded-xl border border-stone ${o.id === 'dark' ? 'bg-[#121916]' : o.id === 'light' ? 'bg-[#e7e5dd]' : 'bg-gradient-to-br from-[#e7e5dd] from-50% to-[#121916] to-50%'}`} aria-hidden />
+              <span className="min-w-0">
+                <span className="block font-semibold text-ink">{o.title}</span>
+                <span className="block text-sm text-ink-soft">{o.detail}</span>
+              </span>
+            </button>
+          )
+        })}
+      </div>
+    </Sheet>
+  )
+}
+
+function RemindersSheet({ open, onClose, say }: { open: boolean; onClose: () => void; say: (m: string) => void }) {
+  const { data, apply } = useStore()
+  const [time, setTime] = useState(data.profile.reminderTime ?? '21:00')
+  return (
+    <Sheet open={open} onClose={onClose} title="Reminders">
+      <Muted className="text-sm">Off unless you add it. This downloads a calendar event titled “Check in” that repeats daily in your own calendar app. Nothing is scheduled on a server.</Muted>
+      <div className="mt-4 flex flex-wrap items-end gap-2">
+        <div className="w-36">
+          <TextField label="Time" type="time" value={time} onChange={setTime} />
+        </div>
+        <Button
+          tone="quiet"
+          disabled={!/^\d{2}:\d{2}$/.test(time)}
+          onClick={() => {
+            apply((d) => updateProfile(d, { reminderTime: time }))
+            downloadBlob(new Blob([reminderIcs(time, `${window.location.origin}/today`)], { type: 'text/calendar' }), 'check-in.ics')
+            say('Open the file to add it to your calendar.')
+          }}
+        >
+          <Bell size={16} aria-hidden /> Add to calendar
+        </Button>
+        {data.profile.reminderTime && (
+          <Button tone="ghost" onClick={() => apply((d) => updateProfile(d, { reminderTime: null }))}>
+            Forget time
+          </Button>
+        )}
+      </div>
+    </Sheet>
+  )
+}
+
+function SupportSheet({ open, onClose, say }: { open: boolean; onClose: () => void; say: (m: string) => void }) {
+  const { data, apply } = useStore()
+  const p = data.profile
+  const [reason, setReason] = useState(p.reason)
+  const [contactName, setContactName] = useState(p.contact?.name ?? '')
+  const [contactAddress, setContactAddress] = useState(p.contact?.address ?? '')
+  useEffect(() => {
+    if (!open) return
+    setReason(p.reason)
+    setContactName(p.contact?.name ?? '')
+    setContactAddress(p.contact?.address ?? '')
+  }, [open, p.reason, p.contact])
+  return (
+    <Sheet
+      open={open}
+      onClose={onClose}
+      title="Reason and support"
+      footer={
+        <div className="flex justify-end">
+          <Button
+            onClick={() => {
+              apply((d) => updateProfile(d, { reason: reason.trim(), contact: contactAddress.trim() ? { name: contactName.trim(), address: contactAddress.trim() } : null }))
+              onClose()
+              say('Saved.')
+            }}
+          >
+            Save
+          </Button>
+        </div>
+      }
+    >
+      <div className="space-y-5">
+        <TextArea label="Your reason" value={reason} onChange={setReason} rows={2} max={500} placeholder="Shown in Calm when you need it." />
+        <div className="rounded-2xl border border-stone p-4">
+          <p className="text-sm font-semibold text-ink">Trusted person (optional)</p>
+          <p className="text-xs leading-relaxed text-ink-soft">Used only to open your own messaging app with a short, general message. Tarn never contacts anyone.</p>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <TextField label="Name" value={contactName} onChange={setContactName} max={60} />
+            <TextField label="Phone or email" value={contactAddress} onChange={setContactAddress} max={120} inputMode="email" />
+          </div>
+        </div>
+      </div>
+    </Sheet>
+  )
+}
+
+function DataSheet({ open, onClose, say }: { open: boolean; onClose: () => void; say: (m: string) => void }) {
+  const { data, storageKind, replaceAll, deleteEverything } = useStore()
   const [importing, setImporting] = useState<{ data: TarnData; skipped: number } | null>(null)
   const [importError, setImportError] = useState<string | null>(null)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [persisted, setPersisted] = useState<boolean | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
-  const p = data.profile
-  const [reason, setReason] = useState(p.reason)
-  const [contactName, setContactName] = useState(p.contact?.name ?? '')
-  const [contactAddress, setContactAddress] = useState(p.contact?.address ?? '')
-  const [customTitle, setCustomTitle] = useState(TITLES.includes(p.appTitle) ? '' : p.appTitle)
-  const [time, setTime] = useState(p.reminderTime ?? '21:00')
-  const [name, setName] = useState(p.name)
-  const [building, setBuilding] = useState(false)
-  const doneToday = new Set(data.routineLogs.filter((l) => l.date === today).map((l) => l.routineId))
-
   useEffect(() => {
-    isPersisted().then(setPersisted)
-  }, [])
-
-  const exportData = () => {
-    downloadBlob(new Blob([exportJson(data)], { type: 'application/json' }), exportFilename())
-    say('Export downloaded. Keep the file somewhere private.')
-  }
+    if (open) isPersisted().then(setPersisted)
+  }, [open])
 
   const onFile = async (file: File | undefined) => {
     setImportError(null)
@@ -56,211 +419,9 @@ export function Profile() {
   }
 
   return (
-    <div className="space-y-6">
-      {toast}
-      <div>
-        <h1 className="serif pt-2 text-[1.9rem] leading-tight text-ink sm:text-[2.2rem] lg:pt-0">Profile</h1>
-        <Muted className="mt-1">You, your goals, and your data.</Muted>
-      </div>
-
-      <Card>
-        <H2>About you</H2>
-        <div className="mt-4 space-y-4">
-          <div className="flex items-end gap-2">
-            <div className="min-w-0 flex-1">
-              <TextField label="Name or nickname" value={name} onChange={setName} max={40} placeholder="Optional" />
-            </div>
-            <Button tone="quiet" disabled={name.trim() === p.name} onClick={() => (apply((d) => updateProfile(d, { name: name.trim() })), say('Saved.'))}>
-              Save
-            </Button>
-          </div>
-          <div>
-            <p id="pf-age" className="text-sm font-semibold text-ink">
-              Age range
-            </p>
-            <div className="mt-2 flex flex-wrap gap-2" role="radiogroup" aria-labelledby="pf-age">
-              {AGE_RANGES.map((a) => (
-                <Chip key={a.id} role="radio" selected={p.ageRange === a.id} onClick={() => apply((d) => updateProfile(d, { ageRange: p.ageRange === a.id ? null : a.id }))}>
-                  {a.label}
-                </Chip>
-              ))}
-            </div>
-          </div>
-          {p.goiNote !== null && (
-            <p className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-parchment px-4 py-3 text-sm text-ink">
-              <span>GOONOMICS note: GOI {p.goiNote}. Entertainment only, not used for anything.</span>
-              <Button tone="ghost" size="sm" onClick={() => apply((d) => updateProfile(d, { goiNote: null }))}>
-                Remove
-              </Button>
-            </p>
-          )}
-        </div>
-      </Card>
-
-      <Card>
-        <div className="flex flex-wrap items-baseline justify-between gap-3">
-          <H2>Daily intentions</H2>
-          <Button tone="quiet" size="sm" onClick={() => setBuilding(true)} aria-label={p.routines.length ? 'Edit daily intentions' : 'Choose daily intentions'}>
-            {p.routines.length ? 'Edit' : 'Choose'}
-          </Button>
-        </div>
-        <Muted className="mt-1 text-sm">The first one shows on Today. Up to {MAX_ROUTINES}, fewer is fine.</Muted>
-        {p.routines.length > 0 && (
-          <ul className="mt-3 space-y-2">
-            {p.routines.map((r) => {
-              const done = doneToday.has(r.id)
-              return (
-                <li key={r.id}>
-                  <button
-                    type="button"
-                    role="checkbox"
-                    aria-checked={done}
-                    onClick={() => apply((d) => toggleRoutine(d, today, r.id))}
-                    className={`press flex min-h-12 w-full items-center gap-3 rounded-2xl border px-4 text-left ${done ? 'border-forest/40 bg-sage-soft' : 'border-stone bg-parchment hover:border-moss'}`}
-                  >
-                    <span className={`grid size-6 shrink-0 place-items-center rounded-full border ${done ? 'border-forest bg-forest text-cream' : 'border-moss'}`} aria-hidden>
-                      {done && <Check size={14} strokeWidth={3} />}
-                    </span>
-                    <span className="font-medium text-ink">{r.label}</span>
-                  </button>
-                </li>
-              )
-            })}
-          </ul>
-        )}
-      </Card>
-
-      <Card>
-        <div className="flex flex-wrap items-baseline justify-between gap-3">
-          <H2>Goals</H2>
-          <Button tone="quiet" size="sm" onClick={() => setAdding(true)}>
-            Add a goal
-          </Button>
-        </div>
-        {data.goals.length === 0 ? (
-          <Muted className="mt-3">No goals yet.</Muted>
-        ) : (
-          <ul className="mt-4 divide-y divide-stone">
-            {data.goals.map((g) => (
-              <li key={g.id} className="flex flex-wrap items-center justify-between gap-3 py-3.5">
-                <div className="min-w-0">
-                  <p className="font-semibold text-ink">
-                    {g.label}
-                    {p.primaryGoalId === g.id && data.goals.length > 1 && <span className="ml-2 rounded-full bg-sage-soft px-2 py-0.5 text-xs font-medium text-forest">Shown first</span>}
-                  </p>
-                  <p className="text-sm text-ink-soft">
-                    {KIND_NAME[g.kind]}, {g.mode === 'stop' ? 'stop' : `reduce, up to ${g.weeklyLimit} in 7 days`}. Since {longDate(g.startDate)}. {g.targetDays ? `${g.targetDays} day stretch.` : 'No end date.'}
-                  </p>
-                </div>
-                <div className="flex gap-1">
-                  {p.primaryGoalId !== g.id && data.goals.length > 1 && (
-                    <Button tone="ghost" size="sm" onClick={() => apply((d) => updateProfile(d, { primaryGoalId: g.id }))}>
-                      Show first
-                    </Button>
-                  )}
-                  <Button tone="quiet" size="sm" onClick={() => setEditGoal(g)}>
-                    Edit
-                  </Button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </Card>
-
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
-          <H2>Your reason and support</H2>
-          <div className="mt-4 space-y-4">
-            <div>
-              <p id="st-wants" className="text-sm font-semibold text-ink">
-                What you want more of
-              </p>
-              <div className="mt-2 flex flex-wrap gap-2" role="group" aria-labelledby="st-wants">
-                {WANTS.map((w) => (
-                  <Chip key={w.id} selected={p.wants.includes(w.id)} onClick={() => apply((d) => updateProfile(d, { wants: p.wants.includes(w.id) ? p.wants.filter((x) => x !== w.id) : [...p.wants, w.id] }))}>
-                    {w.label}
-                  </Chip>
-                ))}
-              </div>
-            </div>
-            <TextArea label="Your reason" value={reason} onChange={setReason} rows={2} max={500} placeholder="Shown in the urge toolkit." />
-            <div className="rounded-2xl border border-stone p-4">
-              <p className="text-sm font-semibold text-ink">Trusted person (optional)</p>
-              <p className="text-xs leading-relaxed text-ink-soft">Used only to open your own messaging app with a short, general message. Tarn never contacts anyone.</p>
-              <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                <TextField label="Name" value={contactName} onChange={setContactName} max={60} />
-                <TextField label="Phone or email" value={contactAddress} onChange={setContactAddress} max={120} inputMode="email" />
-              </div>
-            </div>
-            <Button
-              onClick={() => {
-                apply((d) => updateProfile(d, { reason: reason.trim(), contact: contactAddress.trim() ? { name: contactName.trim(), address: contactAddress.trim() } : null }))
-                say('Saved.')
-              }}
-            >
-              Save
-            </Button>
-          </div>
-        </Card>
-
-        <Card>
-          <H2>Discretion and reminders</H2>
-          <div className="mt-4 space-y-5">
-            <div>
-              <p id="st-title" className="text-sm font-semibold text-ink">
-                Name in the browser tab
-              </p>
-              <p className="text-xs text-ink-soft">The installed app is always called Tarn, with a plain stone icon.</p>
-              <div className="mt-2 flex flex-wrap gap-2" role="radiogroup" aria-labelledby="st-title">
-                {TITLES.map((t) => (
-                  <Chip key={t} selected={p.appTitle === t} onClick={() => (apply((d) => updateProfile(d, { appTitle: t })), setCustomTitle(''))}>
-                    {t}
-                  </Chip>
-                ))}
-              </div>
-              <div className="mt-3 flex items-end gap-2">
-                <div className="min-w-0 flex-1">
-                  <TextField label="Or your own" value={customTitle} onChange={setCustomTitle} max={40} />
-                </div>
-                <Button tone="quiet" disabled={!customTitle.trim()} onClick={() => apply((d) => updateProfile(d, { appTitle: customTitle.trim() }))}>
-                  Use
-                </Button>
-              </div>
-            </div>
-            <div className="border-t border-stone pt-5">
-              <p className="text-sm font-semibold text-ink">Daily check in reminder</p>
-              <p className="text-xs leading-relaxed text-ink-soft">Off unless you add it. Downloads a calendar event titled “Check in” that repeats daily in your own calendar app. Nothing is scheduled on a server.</p>
-              <div className="mt-3 flex flex-wrap items-end gap-2">
-                <div className="w-36">
-                  <TextField label="Time" type="time" value={time} onChange={setTime} />
-                </div>
-                <Button
-                  tone="quiet"
-                  disabled={!/^\d{2}:\d{2}$/.test(time)}
-                  onClick={() => {
-                    apply((d) => updateProfile(d, { reminderTime: time }))
-                    downloadBlob(new Blob([reminderIcs(time, `${window.location.origin}/today`)], { type: 'text/calendar' }), 'check-in.ics')
-                    say('Open the file to add it to your calendar.')
-                  }}
-                >
-                  <CalendarPlus size={16} aria-hidden /> Add to calendar
-                </Button>
-              </div>
-            </div>
-          </div>
-        </Card>
-      </div>
-
-      <Card>
-        <H2>Install Tarn</H2>
-        <Muted className="mt-1 mb-4 text-sm">Open your daily practice from your Home Screen. Optional; everything also works in the browser.</Muted>
-        <InstallPanel />
-      </Card>
-
-      <Card>
-        <H2>Your data</H2>
-        <div className="mt-3 flex items-start gap-3 rounded-2xl bg-sage-soft/60 p-4">
+    <>
+      <Sheet open={open && !importing && !deleteOpen} onClose={onClose} title="Privacy and data">
+        <div className="flex items-start gap-3 rounded-2xl bg-sage-soft/60 p-4">
           <ShieldCheck size={22} className="mt-0.5 shrink-0 text-forest" aria-hidden />
           <div className="text-sm leading-relaxed text-ink">
             <p>
@@ -268,32 +429,31 @@ export function Profile() {
                 ? 'This browser is not allowing storage, so records only last until this tab closes.'
                 : 'Records are stored in this browser on this device (IndexedDB). There is no account and no copy on any server.'}
             </p>
-            <p className="mt-1 text-ink-soft">
-              Tarn does not encrypt them itself; they are protected by your device lock. Clearing this site’s browser data deletes them, and they do not move to other devices on their own. Export to keep a copy.
-            </p>
-            {storageKind === 'indexeddb' && persisted !== null && (
-              <p className="mt-2">
-                {persisted ? (
-                  'This browser has agreed to keep your records even when space runs low.'
-                ) : (
-                  <button
-                    type="button"
-                    className="inline-flex min-h-11 items-center font-semibold text-forest underline"
-                    onClick={async () => {
-                      const r = await requestPersistence()
-                      setPersisted(r)
-                      say(r ? 'The browser will keep your records.' : 'The browser did not agree. Installing the app or exporting regularly helps.')
-                    }}
-                  >
-                    Ask the browser to keep my records
-                  </button>
-                )}
-              </p>
+            <p className="mt-1 text-ink-soft">Tarn does not encrypt them itself; your device lock protects them. Clearing this site’s browser data deletes them, and they do not move to other devices on their own. Export to keep a copy.</p>
+            {storageKind === 'indexeddb' && persisted === false && (
+              <button
+                type="button"
+                className="mt-1 inline-flex min-h-11 items-center font-semibold text-forest underline"
+                onClick={async () => {
+                  const r = await requestPersistence()
+                  setPersisted(r)
+                  say(r ? 'The browser will keep your records.' : 'The browser did not agree. Installing the app or exporting regularly helps.')
+                }}
+              >
+                Ask the browser to keep my records
+              </button>
             )}
+            {persisted && <p className="mt-2">This browser has agreed to keep your records even when space runs low.</p>}
           </div>
         </div>
-        <div className="mt-5 grid gap-2 sm:grid-cols-3">
-          <Button tone="quiet" onClick={exportData}>
+        <div className="mt-5 grid gap-2">
+          <Button
+            tone="quiet"
+            onClick={() => {
+              downloadBlob(new Blob([exportJson(data)], { type: 'application/json' }), exportFilename())
+              say('Export downloaded. Keep the file somewhere private.')
+            }}
+          >
             <Download size={16} aria-hidden /> Export (JSON)
           </Button>
           <Button tone="quiet" onClick={() => fileRef.current?.click()}>
@@ -309,40 +469,7 @@ export function Profile() {
             {importError}
           </p>
         )}
-        <details className="mt-5 text-sm text-ink-soft">
-          <summary className="flex min-h-11 cursor-pointer items-center font-semibold text-forest">What Tarn never does</summary>
-          <ul className="mt-2 list-disc space-y-1 pl-5 leading-relaxed">
-            <li>No analytics, ads, trackers or cookies.</li>
-            <li>No uploads of your goals, check ins, urges, journal or history, to us or to any AI service.</li>
-            <li>No public profile, streaks or leaderboards. Sharing only happens when you choose, and never includes your habit or setbacks.</li>
-            <li>No identity documents, no account, no email address.</li>
-            <li>The app files are cached so it works offline. Your records are not part of that cache.</li>
-          </ul>
-        </details>
-      </Card>
-
-      <p className="px-1 text-sm text-ink-soft">
-        Tarn is a self directed habit tool, not medical care. If a habit keeps interfering with your life, a qualified professional can help.{' '}
-        <a href="/" className="font-semibold text-forest underline">
-          Back to GOONOMICS
-        </a>
-      </p>
-
-      <RoutineBuilder
-        open={building}
-        onClose={() => setBuilding(false)}
-        initial={p.routines}
-        onSave={(rs) => (apply((d) => setRoutines(d, rs)), say('Intentions saved.'))}
-      />
-      <GoalSheet goal={editGoal} onClose={() => setEditGoal(null)} say={say} />
-      <AddGoalSheet
-        open={adding}
-        onClose={() => setAdding(false)}
-        onAdd={(d, target) => {
-          apply((x) => addGoal(x, d, today, target))
-          say('Goal added. It starts today.')
-        }}
-      />
+      </Sheet>
 
       <Sheet
         open={!!importing}
@@ -358,6 +485,7 @@ export function Profile() {
                 if (!importing) return
                 await replaceAll(importing.data)
                 setImporting(null)
+                onClose()
                 say('Import complete.')
                 navigate(importing.data.profile.onboarded ? 'today' : 'welcome')
               }}
@@ -384,10 +512,11 @@ export function Profile() {
         onDelete={async () => {
           await deleteEverything()
           setDeleteOpen(false)
+          onClose()
           navigate('welcome', { replace: true })
         }}
       />
-    </div>
+    </>
   )
 }
 

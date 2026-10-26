@@ -1,29 +1,61 @@
+import { useState } from 'react'
 import type { Glyph } from '../lib/badges'
 
 /**
- * Tarn's original art, drawn in SVG so it stays crisp, light and on palette. No generated images:
- * the project's Higgsfield budget was already used (docs/assets-v1.md).
+ * Tarn's art. Backgrounds, the logo and milestone badges are Higgsfield generations processed into
+ * WebP (docs/assets-v1.md); the SVG drawings here are the offline and error fallbacks.
  */
 
-/** The mark: a sun rising over two peaks, mirrored in a still lake. */
-export function TarnMark({ size = 28, className = '', tone = 'light' }: { size?: number; className?: string; tone?: 'light' | 'dark' }) {
-  const water = tone === 'dark' ? '#faf8f2' : '#244b3a'
+/** The vector mark: a sun rising between two peaks, mirrored in a still lake. Used when the logo image is unavailable. */
+function VectorMark({ size, className = '' }: { size: number; className?: string }) {
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" className={className} aria-hidden focusable="false">
+      <rect width="32" height="32" rx="8" style={{ fill: 'var(--color-forest)' }} />
       <circle cx="16" cy="13.2" r="3.9" fill="#c6a66b" />
-      <path d="M2.5 21.8 L10 9.6 L16 18.2 L21.6 12.6 L29.5 21.8 Z" fill={tone === 'dark' ? '#a7b99a' : '#788b68'} />
-      <path d="M5 24.6 H27" stroke={water} strokeWidth="2.2" strokeLinecap="round" />
-      <path d="M9.5 28 H22.5" stroke={water} strokeWidth="2.2" strokeLinecap="round" strokeOpacity="0.55" />
+      <path d="M2.5 21.8 L10 9.6 L16 18.2 L21.6 12.6 L29.5 21.8 Z" fill="#a7b99a" />
+      <path d="M5 24.6 H27" stroke="#f0eee8" strokeWidth="2.2" strokeLinecap="round" />
+      <path d="M9.5 28 H22.5" stroke="#f0eee8" strokeWidth="2.2" strokeLinecap="round" strokeOpacity="0.55" />
     </svg>
   )
+}
+
+/** The logo tile, generated with Higgsfield (docs/assets-v1.md), with the vector mark as a fallback. */
+export function TarnMark({ size = 28, className = '' }: { size?: number; className?: string; tone?: 'light' | 'dark' }) {
+  const [failed, setFailed] = useState(false)
+  if (failed) return <VectorMark size={size} className={className} />
+  return <img src="/art/logo-192.webp" width={size} height={size} alt="" aria-hidden onError={() => setFailed(true)} className={`shrink-0 rounded-[24%] ${className}`} />
 }
 
 export function Wordmark({ className = '', tone = 'light', size = 26 }: { className?: string; tone?: 'light' | 'dark'; size?: number }) {
   return (
     <span className={`inline-flex items-center gap-2 ${className}`}>
-      <TarnMark size={size} tone={tone} />
-      <span className={`serif text-[1.35rem] leading-none tracking-[0.01em] ${tone === 'dark' ? 'text-cream' : 'text-ink'}`}>Tarn</span>
+      <TarnMark size={size} />
+      <span className={`serif text-[1.35rem] leading-none tracking-[0.01em] ${tone === 'dark' ? 'text-snow' : 'text-ink'}`}>Tarn</span>
     </span>
+  )
+}
+
+/**
+ * A full bleed scene from the generated art, portrait on tall screens and wide elsewhere. The SVG
+ * landscape sits underneath, so a missing image still leaves a calm scene.
+ */
+export function Scenery({ variant, className = '', eager = false }: { variant: 'dawn' | 'dusk'; className?: string; eager?: boolean }) {
+  const base = variant === 'dawn' ? '/art/dawn' : '/art/calm-dusk'
+  return (
+    <div className={`overflow-hidden ${variant === 'dawn' ? 'bg-sage-soft' : 'bg-dusk'} ${className}`} aria-hidden>
+      <Landscape variant={variant} className="absolute inset-0 h-full w-full" />
+      <picture>
+        <source media="(orientation: portrait)" srcSet={`${base}-portrait.webp`} />
+        <img
+          src={`${base}-wide.webp`}
+          alt=""
+          loading={eager ? 'eager' : 'lazy'}
+          decoding="async"
+          className="absolute inset-0 h-full w-full animate-fade object-cover"
+          onError={(e) => (e.currentTarget.style.display = 'none')}
+        />
+      </picture>
+    </div>
   )
 }
 
@@ -119,18 +151,30 @@ const GLYPHS: Record<Glyph, string> = {
   flame: 'M12 20c3.3 0 5.5-2.2 5.5-5.2 0-3.3-2.6-5.4-3.6-8.8-1.4 1.6-1.8 3.2-1.6 4.7C11 9.6 9.7 8.4 9.3 6.5 7.4 8.6 6.5 11.2 6.5 14.8 6.5 17.8 8.7 20 12 20Z M12 20c-1.4 0-2.3-.9-2.3-2.2 0-1.5 1.2-2.4 2.3-3.8 1.1 1.4 2.3 2.3 2.3 3.8 0 1.3-.9 2.2-2.3 2.2Z',
 }
 
-export function BadgeEmblem({ glyph, earned, size = 64, progress = 0 }: { glyph: Glyph; earned: boolean; size?: number; progress?: number }) {
+/** Milestones have generated badge art; practice badges and fallbacks use the line glyphs. */
+export function BadgeEmblem({ glyph, earned, size = 64, progress = 0, image }: { glyph: Glyph; earned: boolean; size?: number; progress?: number; image?: string }) {
+  const [failed, setFailed] = useState(false)
   const r = 28
   const c = 2 * Math.PI * r
+  if (image && !failed) {
+    return (
+      <span className="relative inline-grid shrink-0 place-items-center" style={{ width: size, height: size }} aria-hidden>
+        <img src={image} alt="" width={size} height={size} loading="lazy" onError={() => setFailed(true)} className={`h-full w-full object-contain transition ${earned ? '' : 'opacity-40 grayscale'}`} />
+        {!earned && progress > 0 && (
+          <svg viewBox="0 0 64 64" className="absolute inset-0 h-full w-full" aria-hidden>
+            <circle cx="32" cy="32" r="30.5" fill="none" strokeWidth="2.5" strokeLinecap="round" strokeDasharray={`${2 * Math.PI * 30.5 * progress} 999`} transform="rotate(-90 32 32)" style={{ stroke: 'var(--color-moss)' }} />
+          </svg>
+        )}
+      </span>
+    )
+  }
   return (
     <svg width={size} height={size} viewBox="0 0 64 64" aria-hidden focusable="false">
-      <circle cx="32" cy="32" r="30" fill={earned ? '#efe4cc' : '#ebe7dc'} />
-      <circle cx="32" cy="32" r={r} fill="none" stroke={earned ? '#c6a66b' : '#d8d4c8'} strokeWidth="2" />
-      {!earned && progress > 0 && (
-        <circle cx="32" cy="32" r={r} fill="none" stroke="#788b68" strokeWidth="2" strokeLinecap="round" strokeDasharray={`${c * progress} ${c}`} transform="rotate(-90 32 32)" />
-      )}
+      <circle cx="32" cy="32" r="30" style={{ fill: earned ? 'var(--color-gold-soft)' : 'var(--color-stone-soft)' }} />
+      <circle cx="32" cy="32" r={r} fill="none" strokeWidth="2" style={{ stroke: earned ? 'var(--color-gold)' : 'var(--color-stone)' }} />
+      {!earned && progress > 0 && <circle cx="32" cy="32" r={r} fill="none" strokeWidth="2" strokeLinecap="round" strokeDasharray={`${c * progress} ${c}`} transform="rotate(-90 32 32)" style={{ stroke: 'var(--color-moss)' }} />}
       <g transform="translate(16 16) scale(1.333)">
-        <path d={GLYPHS[glyph]} fill="none" stroke={earned ? '#244b3a' : '#8c9483'} strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round" />
+        <path d={GLYPHS[glyph]} fill="none" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round" style={{ stroke: earned ? 'var(--color-forest)' : 'var(--color-ink-soft)' }} />
       </g>
     </svg>
   )

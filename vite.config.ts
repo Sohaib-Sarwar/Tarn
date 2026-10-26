@@ -37,7 +37,7 @@ function serviceWorker(): Plugin {
       const files = Object.keys(bundle)
         .filter((f) => f.startsWith('_app/') && /\.(js|css|woff2|webp|png|jpg)$/.test(f))
         .sort()
-      const precache = ['/index.html', '/manifest.webmanifest', '/icon.svg', '/icons/icon-192.png', '/icons/icon-512.png', ...ART, ...files.map((f) => `/${f}`)]
+      const precache = ['/index.html', '/manifest.webmanifest', '/favicon.png', '/theme.js', '/icons/icon-192.png', '/icons/icon-512.png', ...ART, ...files.map((f) => `/${f}`)]
       const version = files
         .join('|')
         .split('')

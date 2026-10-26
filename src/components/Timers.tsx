@@ -151,8 +151,8 @@ export function Countdown({ seconds, title, onDone, onStop, autoStart = true }: 
     <div className="flex flex-col items-center text-center">
       <div className="relative grid size-56 place-items-center">
         <svg viewBox="0 0 120 120" className="absolute inset-0" aria-hidden>
-          <circle cx="60" cy="60" r={r} fill="#faf8f2" stroke="#e3e9dc" strokeWidth="5" />
-          <circle cx="60" cy="60" r={r} fill="none" stroke="#244b3a" strokeWidth="5" strokeLinecap="round" strokeDasharray={`${c * p} ${c}`} transform="rotate(-90 60 60)" />
+          <circle cx="60" cy="60" r={r} strokeWidth="5" style={{ fill: 'var(--color-cream)', stroke: 'var(--color-sage-soft)' }} />
+          <circle cx="60" cy="60" r={r} fill="none" strokeWidth="5" style={{ stroke: 'var(--color-forest)' }} strokeLinecap="round" strokeDasharray={`${c * p} ${c}`} transform="rotate(-90 60 60)" />
         </svg>
         <div className="relative">
           <p className="serif text-5xl text-ink tabular-nums" role="timer" aria-label={`${title}, ${fmt(seconds - elapsed)} left`}>

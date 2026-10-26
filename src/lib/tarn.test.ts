@@ -459,7 +459,7 @@ describe('V1.1: calm feelings, profile, handoff, routes, install', () => {
     writeHandoff({ ageRange: '25-34', goi: 700 })
     expect(readHandoff()).toEqual({ ageRange: '25-34', goi: 700 })
     sessionStorage.setItem('tarn-handoff', JSON.stringify({ ageRange: 'x', goi: 5, extra: 'secret' }))
-    expect(readHandoff()).toBeNull()
+    expect(readHandoff()).toEqual({ ageRange: null, goi: null })
     clearHandoff()
   })
   it('old V1.0 paths open the screen that now holds the feature', () => {
@@ -483,5 +483,24 @@ describe('V1.1: calm feelings, profile, handoff, routes, install', () => {
     expect(detectPlatform(ipad, 0)).toBe('mac-safari')
     expect(detectPlatform(android, 5)).toBe('chromium')
     expect(detectPlatform(firefox, 0)).toBe('firefox')
+  })
+})
+
+describe('V1.2: photo, theme and terms in the profile', () => {
+  it('keeps a small image data URL and rejects anything else', () => {
+    const ok = 'data:image/jpeg;base64,' + 'A'.repeat(200)
+    expect(sanitizeData({ profile: { photo: ok } }).data.profile.photo).toBe(ok)
+    expect(sanitizeData({ profile: { photo: 'https://example.com/me.jpg' } }).data.profile.photo).toBeNull()
+    expect(sanitizeData({ profile: { photo: 'data:text/html;base64,PHNjcmlwdD4=' } }).data.profile.photo).toBeNull()
+    expect(sanitizeData({ profile: { photo: 'data:image/png;base64,' + 'A'.repeat(500_000) } }).data.profile.photo).toBeNull()
+  })
+  it('defaults the theme to system and keeps valid choices', () => {
+    expect(sanitizeData({ profile: {} }).data.profile.theme).toBe('system')
+    expect(sanitizeData({ profile: { theme: 'dark' } }).data.profile.theme).toBe('dark')
+    expect(sanitizeData({ profile: { theme: 'neon' } }).data.profile.theme).toBe('system')
+  })
+  it('records when the terms were accepted at onboarding', () => {
+    const d = completeOnboarding(emptyData(), { drafts: draftsFor('stop-porn'), startDate: T, targetDays: null, wants: [], reason: '', termsAcceptedAt: '2026-03-10T09:00:00.000Z' })
+    expect(d.profile.termsAcceptedAt).toBe('2026-03-10T09:00:00.000Z')
   })
 })
