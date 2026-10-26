@@ -1,8 +1,8 @@
 import { ArrowRight, BookOpen, CalendarDays, Check, Download, Leaf, Lock, ShieldCheck, Sparkles, Sun, Waves, WifiOff } from 'lucide-react'
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type CSSProperties, type ReactNode } from 'react'
 import { BadgeEmblem, Scenery, Wordmark } from '../components/Art'
 import { InstallSteps } from '../components/Install'
-import { Sheet } from '../components/ui'
+import { Button, Sheet } from '../components/ui'
 import { milestoneImage } from '../lib/badges'
 import { promptInstall, useInstall } from '../install'
 import { readHandoff } from '../handoff'
@@ -14,8 +14,19 @@ import { Link, navigate } from '../router'
  */
 export function Landing() {
   const install = useInstall()
-  const [installOpen, setInstallOpen] = useState(false)
+  const [installOpen, setInstallOpen] = useState(() => new URLSearchParams(window.location.search).get('install') === '1')
   const [handoff] = useState(readHandoff)
+
+  // The landing is always the white light design, whatever the device theme; the app restores the
+  // person's own choice when they continue.
+  useEffect(() => {
+    const root = document.documentElement
+    const previous = root.getAttribute('data-theme')
+    root.setAttribute('data-theme', 'light')
+    return () => {
+      if (previous) root.setAttribute('data-theme', previous)
+    }
+  }, [])
   const begin = () => navigate('start')
   const installCta = async () => {
     if (install.canPrompt) await promptInstall()
@@ -23,7 +34,7 @@ export function Landing() {
   }
 
   return (
-    <div className="min-h-dvh bg-parchment text-ink">
+    <div className="min-h-dvh bg-parchment text-ink" style={WHITE}>
       <header className="pt-safe fixed inset-x-0 top-0 z-40">
         <div className="glass mx-auto mt-3 flex h-14 w-[calc(100%-1.5rem)] max-w-6xl items-center justify-between rounded-full pr-2 pl-4">
           <a href="#top" className="inline-flex min-h-11 items-center" aria-label="Tarn, top of page">
@@ -55,7 +66,7 @@ export function Landing() {
       </header>
 
       <main id="top">
-        <section className="relative isolate flex min-h-[100svh] items-end overflow-hidden pt-24 pb-14 sm:items-center sm:pb-20">
+        <section className="relative isolate flex min-h-[88svh] items-end overflow-hidden pt-24 pb-10 sm:min-h-[100svh] sm:items-center sm:pb-20">
           <Scenery variant="dawn" eager className="absolute inset-0 -z-20 dark:hidden" />
           <Scenery variant="dusk" eager className="absolute inset-0 -z-20 hidden dark:block" />
           <div className="absolute inset-0 -z-10 bg-gradient-to-t from-parchment via-parchment/70 to-transparent sm:bg-gradient-to-r sm:from-parchment sm:via-parchment/75 sm:to-transparent" aria-hidden />
@@ -64,8 +75,8 @@ export function Landing() {
               {handoff && <p className="mb-4 inline-flex rounded-full bg-cream/80 px-3 py-1 text-sm font-medium text-forest">Welcome from GOONOMICS</p>}
               <p className="text-sm font-semibold tracking-[0.16em] text-moss">MONK MODE, WITHOUT THE SHAME</p>
               <h1 className="serif mt-3 text-[2.9rem] leading-[1.02] tracking-[-0.015em] text-balance sm:text-[4.2rem]">Come back to yourself.</h1>
-              <p className="mt-5 max-w-lg text-lg leading-relaxed text-ink-soft">
-                A calm, private companion for the habits you want to change. One minute of calm when an urge hits, a ten second check in, and progress that never shames you.
+              <p className="mt-4 max-w-lg text-lg leading-relaxed text-ink-soft sm:mt-5">
+                A calm, private companion for the habits you want to change.<span className="hidden sm:inline"> One minute of calm when an urge hits, a ten second check in, and progress that never shames you.</span>
               </p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <button type="button" onClick={begin} className="press inline-flex min-h-14 items-center justify-center gap-2 rounded-full bg-forest px-7 font-semibold tracking-wide text-cream shadow-soft hover:bg-forest-deep">
@@ -77,7 +88,10 @@ export function Landing() {
                   </button>
                 )}
               </div>
-              <ul className="mt-7 flex flex-wrap gap-x-5 gap-y-2 text-sm text-ink-soft">
+              <div className="mt-8 hidden md:block lg:hidden">
+                <QrCard />
+              </div>
+              <ul className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm text-ink-soft sm:mt-7">
                 {['No account', 'Free', 'Works offline', 'Stays on your device'].map((t) => (
                   <li key={t} className="flex items-center gap-1.5">
                     <Check size={15} className="text-forest" aria-hidden /> {t}
@@ -85,55 +99,56 @@ export function Landing() {
                 ))}
               </ul>
             </div>
-            <div className="hidden justify-center lg:flex">
+            <div className="hidden flex-col items-center gap-6 lg:flex">
               <PhoneToday />
+              <QrCard />
             </div>
           </div>
         </section>
 
-        <section id="how" className="mx-auto max-w-6xl scroll-mt-24 px-5 py-20 sm:px-8">
+        <section id="how" className="mx-auto max-w-6xl scroll-mt-24 px-5 py-14 sm:px-8 sm:py-20">
           <SectionTitle kicker="HOW IT WORKS" title="Three small things, every day" />
-          <ol className="mt-10 grid gap-4 md:grid-cols-3">
+          <ol className="mt-8 grid gap-3 sm:mt-10 sm:gap-4 md:grid-cols-3">
             {[
               { icon: Leaf, title: 'Choose your intention', body: 'Pick what you want to change, porn or masturbation tracked separately, and one small daily intention.' },
               { icon: Check, title: 'Check in in ten seconds', body: 'Tell Tarn how today went. Ticks fill your calendar. Unlogged days are never counted against you.' },
               { icon: Waves, title: 'Take a moment when it is hard', body: 'One tap opens a quiet screen: a minute of slow breathing, noticing the urge, then one next step.' },
             ].map((s, i) => (
-              <li key={s.title} className="rounded-[1.75rem] border border-stone/80 bg-cream p-6">
+              <li key={s.title} className="rounded-[1.75rem] border border-stone/80 bg-cream p-5 sm:p-6">
                 <div className="flex items-center gap-3">
                   <span className="grid size-11 place-items-center rounded-2xl bg-sage-soft text-forest">
                     <s.icon size={20} aria-hidden />
                   </span>
                   <span className="text-sm font-semibold text-moss">Step {i + 1}</span>
                 </div>
-                <h3 className="serif mt-4 text-2xl text-ink">{s.title}</h3>
-                <p className="mt-2 leading-relaxed text-ink-soft">{s.body}</p>
+                <h3 className="serif mt-3 text-xl text-ink sm:mt-4 sm:text-2xl">{s.title}</h3>
+                <p className="mt-2 hidden leading-relaxed text-ink-soft sm:block">{s.body}</p>
               </li>
             ))}
           </ol>
         </section>
 
-        <section className="relative isolate overflow-hidden py-20 text-snow">
+        <section className="relative isolate overflow-hidden py-14 text-snow sm:py-20">
           <Scenery variant="dusk" className="absolute inset-0 -z-20" />
           <div className="absolute inset-0 -z-10 bg-dusk/55" aria-hidden />
           <div className="mx-auto grid max-w-6xl items-center gap-12 px-5 sm:px-8 lg:grid-cols-2">
             <div>
               <p className="text-sm font-semibold tracking-[0.16em] text-[#a7c4ae]">FIND YOUR CALM</p>
               <h2 className="serif mt-3 text-4xl leading-tight sm:text-5xl">Pause. You do not have to act on every urge.</h2>
-              <p className="mt-5 max-w-lg text-lg leading-relaxed text-snow/80">
+              <p className="mt-5 hidden max-w-lg text-lg leading-relaxed text-snow/80 sm:block">
                 The calm screen dims everything else. Breathe in, breathe out a little longer, notice where you feel it, then choose one thing: a walk, a change of room, the phone in another room, or a few honest words.
               </p>
               <p className="mt-4 text-sm text-snow/60">Breathing is offered as a way to slow down. It is not promised to remove an urge.</p>
             </div>
-            <div className="flex justify-center">
+            <div className="hidden justify-center sm:flex">
               <PhoneCalm />
             </div>
           </div>
         </section>
 
-        <section id="features" className="mx-auto max-w-6xl scroll-mt-24 px-5 py-20 sm:px-8">
+        <section id="features" className="mx-auto max-w-6xl scroll-mt-24 px-5 py-14 sm:px-8 sm:py-20">
           <SectionTitle kicker="FEATURES" title="Built for steady days, kind to the hard ones" />
-          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-8 grid grid-cols-2 gap-3 sm:mt-10 sm:gap-4 lg:grid-cols-3">
             <Feature icon={CalendarDays} title="A calendar of ticks" body="Green ticks for days you checked in, a soft cross only for a setback you chose to log. Your history always stays." />
             <Feature icon={Sparkles} title="Milestones worth keeping" body="From First Step to One Year of Intention. A reset restarts a counter, never your longest streak or your badges." />
             <Feature icon={BookOpen} title="A private journal" body="Morning intentions, evening reflections, weekly reviews. Search them later. Never read by anyone else." />
@@ -148,12 +163,12 @@ export function Landing() {
           </div>
         </section>
 
-        <section id="privacy" className="scroll-mt-24 bg-cream py-20">
+        <section id="privacy" className="scroll-mt-24 bg-cream py-14 sm:py-20">
           <div className="mx-auto grid max-w-6xl gap-10 px-5 sm:px-8 lg:grid-cols-2">
             <div>
               <SectionTitle kicker="PRIVACY" title="Your records never leave this device" align="left" />
               <p className="mt-4 max-w-lg leading-relaxed text-ink-soft">
-                No account, no server copy, no analytics, no AI reading your journal. You can export your data as a file and delete everything in two taps.
+                No account, no server copy, no analytics.<span className="hidden sm:inline"> No AI reading your journal. Export your data as a file, or delete everything in two taps.</span>
               </p>
               <Link to="terms" className="press mt-5 inline-flex min-h-11 items-center gap-1.5 font-semibold text-forest">
                 Read the terms and privacy <ArrowRight size={16} aria-hidden />
@@ -178,7 +193,7 @@ export function Landing() {
           </div>
         </section>
 
-        <section id="faq" className="mx-auto max-w-3xl scroll-mt-24 px-5 py-20 sm:px-8">
+        <section id="faq" className="mx-auto max-w-3xl scroll-mt-24 px-5 py-14 sm:px-8 sm:py-20">
           <SectionTitle kicker="FAQ" title="Questions people ask" />
           <div className="mt-8 divide-y divide-stone rounded-[1.75rem] border border-stone/80 bg-cream">
             {[
@@ -235,7 +250,23 @@ export function Landing() {
 
       <Sheet open={installOpen} onClose={() => setInstallOpen(false)} title="Install Tarn">
         <p className="mb-4 text-ink-soft">Open your daily practice from your Home Screen. It works offline and keeps the same privacy.</p>
-        <InstallSteps state={install} />
+        {install.installed ? (
+          <p className="text-ink">Tarn is already installed on this device.</p>
+        ) : install.canPrompt ? (
+          <Button
+            onClick={async () => {
+              if ((await promptInstall()) === 'accepted') setInstallOpen(false)
+            }}
+          >
+            <Download size={16} aria-hidden /> Install app
+          </Button>
+        ) : (
+          <InstallSteps state={install} />
+        )}
+        <div className="mt-6 hidden items-center gap-4 rounded-2xl bg-parchment p-4 sm:flex">
+          <img src="/qr-install.png" alt="QR code to open Tarn on your phone" width={112} height={112} className="rounded-xl" />
+          <p className="text-sm text-ink-soft">On a computer? Scan this with your phone camera to open Tarn there and add it to your Home Screen.</p>
+        </div>
       </Sheet>
     </div>
   )
@@ -252,12 +283,12 @@ function SectionTitle({ kicker, title, align = 'center' }: { kicker: string; tit
 
 function Feature({ icon: Icon, title, body }: { icon: typeof Lock; title: string; body: string }) {
   return (
-    <div className="rounded-[1.75rem] border border-stone/80 bg-cream p-6">
+    <div className="rounded-[1.75rem] border border-stone/80 bg-cream p-4 sm:p-6">
       <span className="grid size-11 place-items-center rounded-2xl bg-sage-soft text-forest">
         <Icon size={20} aria-hidden />
       </span>
-      <h3 className="serif mt-4 text-xl text-ink">{title}</h3>
-      <p className="mt-2 leading-relaxed text-ink-soft">{body}</p>
+      <h3 className="serif mt-3 text-lg leading-snug text-ink sm:mt-4 sm:text-xl">{title}</h3>
+      <p className="mt-2 hidden leading-relaxed text-ink-soft sm:block">{body}</p>
     </div>
   )
 }
@@ -334,5 +365,21 @@ function PhoneCalm() {
         </div>
       </div>
     </Phone>
+  )
+}
+
+/** White surfaces for the landing, set as token overrides so every component follows. */
+const WHITE = { '--color-parchment': '#ffffff', '--color-cream': '#f6f7f3', '--color-stone': '#e3e5dd' } as CSSProperties
+
+/** Desktop only: scan with a phone to open Tarn there with the install steps showing. */
+function QrCard() {
+  return (
+    <div className="flex w-full max-w-sm items-center gap-4 rounded-[1.75rem] border border-stone bg-white/90 p-4 shadow-soft backdrop-blur">
+      <img src="/qr-install.png" alt="QR code to install Tarn on your phone" width={112} height={112} className="shrink-0 rounded-xl" />
+      <div className="min-w-0">
+        <p className="serif text-lg leading-tight text-ink">Get Tarn on your phone</p>
+        <p className="mt-1 text-sm leading-snug text-ink-soft">Scan with your camera. On iPhone: Share, then Add to Home Screen. On Android: Install app.</p>
+      </div>
+    </div>
   )
 }

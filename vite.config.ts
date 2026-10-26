@@ -5,7 +5,7 @@ import tailwindcss from '@tailwindcss/vite'
 
 /** Social scrapers want absolute URLs. Set SITE_URL at build time for the real domain. */
 function siteOrigin(): Plugin {
-  const host = (process.env.SITE_URL ?? 'https://tarn.vercel.app').replace(/\/$/, '')
+  const host = (process.env.SITE_URL ?? 'https://tarn-rehab.vercel.app').replace(/\/$/, '')
   return { name: 'site-origin', transformIndexHtml: (html) => html.replaceAll('%OG_ORIGIN%', host) }
 }
 

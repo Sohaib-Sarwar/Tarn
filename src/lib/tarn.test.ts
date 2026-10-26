@@ -494,10 +494,10 @@ describe('V1.2: photo, theme and terms in the profile', () => {
     expect(sanitizeData({ profile: { photo: 'data:text/html;base64,PHNjcmlwdD4=' } }).data.profile.photo).toBeNull()
     expect(sanitizeData({ profile: { photo: 'data:image/png;base64,' + 'A'.repeat(500_000) } }).data.profile.photo).toBeNull()
   })
-  it('defaults the theme to system and keeps valid choices', () => {
-    expect(sanitizeData({ profile: {} }).data.profile.theme).toBe('system')
+  it('defaults the theme to light and keeps valid choices', () => {
+    expect(sanitizeData({ profile: {} }).data.profile.theme).toBe('light')
     expect(sanitizeData({ profile: { theme: 'dark' } }).data.profile.theme).toBe('dark')
-    expect(sanitizeData({ profile: { theme: 'neon' } }).data.profile.theme).toBe('system')
+    expect(sanitizeData({ profile: { theme: 'neon' } }).data.profile.theme).toBe('light')
   })
   it('records when the terms were accepted at onboarding', () => {
     const d = completeOnboarding(emptyData(), { drafts: draftsFor('stop-porn'), startDate: T, targetDays: null, wants: [], reason: '', termsAcceptedAt: '2026-03-10T09:00:00.000Z' })

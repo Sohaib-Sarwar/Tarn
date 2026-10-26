@@ -144,7 +144,7 @@ export function sanitizeProfile(v: unknown): Profile {
     name: text(v.name, 40).trim(),
     ageRange: oneOf(v.ageRange, AGES) ? v.ageRange : null,
     photo: typeof v.photo === 'string' && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(v.photo) && v.photo.length < 400_000 ? v.photo : null,
-    theme: oneOf(v.theme, ['system', 'light', 'dark'] as readonly Theme[]) ? v.theme : 'system',
+    theme: oneOf(v.theme, ['system', 'light', 'dark'] as readonly Theme[]) ? v.theme : 'light',
     termsAcceptedAt: iso(v.termsAcceptedAt),
     goiNote: typeof v.goiNote === 'number' && Number.isInteger(v.goiNote) && v.goiNote >= 300 && v.goiNote <= 850 ? v.goiNote : null,
     wants: Array.isArray(v.wants) ? [...new Set(v.wants.filter((w): w is Want => oneOf(w, WANT_IDS)))] : [],

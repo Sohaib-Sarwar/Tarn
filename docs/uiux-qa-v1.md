@@ -1,12 +1,29 @@
-# Tarn QA report (V1.1 and V1.2)
+# Tarn QA report (V1.1 to V1.3)
 
 Run on 2026-10-25 and 26, Windows 11, Node 24.12, Chrome (desktop) driven by browser automation
 against production builds (`vite preview`). Viewports were tested with exact size iframes on the
 real build. No physical iPhone or Android device was available.
 
+## V1.3 final check (2026-10-26)
+
+The browser extension was disconnected, so the final pass drove the installed Chrome headless over
+the DevTools protocol (real Chrome layout), with mobile emulation at device scale 2 and a seeded
+three week history. Every app page (Today, Journey, Calm, Journal, Profile, Terms) at 320×700,
+360×800, 390×844, 430×932, 768×1024, 1024×768, 1280×800, 1440×900, 1920×1080 and 844×390, a dark
+mode pass at 360 and 390 px, and the landing at 390 and 1440 px: **74 combinations, 0 findings**
+(no sideways page scroll, nothing off screen, no clipped text, no control under 40 by 24 px).
+
+- The landing stays light on white even when the device prefers dark (also unit tested).
+- Glass tab bar: computed `backdrop-filter: blur(24px) saturate(1.9) brightness(1.04)`. This
+  machine reports reduced transparency (Windows transparency effects), where the bar correctly turns
+  solid; the glass screenshots emulate the phone default.
+- Scrollbars are hidden everywhere; scrolling by touch, wheel and keyboard still works.
+- Fixed: the Today card photo band was reduced so the italic line keeps its contrast.
+- Screenshots: `docs/screens/`.
+
 ## Automated
 
-`npm test`: **70 / 70 passing** (`src/lib/tarn.test.ts` logic, `src/App.test.tsx` UI).
+`npm test`: **72 / 72 passing** (`src/lib/tarn.test.ts` logic, `src/App.test.tsx` UI).
 `npm run build`: clean, including both TypeScript projects.
 
 Covered: streak rules (stop, reduce with weekly limit, custom), midnight and daylight saving,

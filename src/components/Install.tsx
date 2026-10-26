@@ -150,6 +150,19 @@ export function InstallPopup() {
   const [result, setResult] = useState<string | null>(null)
   const eligible = !state.installed && !state.dismissed && state.supported
 
+  // Arriving from the install QR is an explicit request: show the steps straight away.
+  useEffect(() => {
+    if (state.installed) return
+    try {
+      if (sessionStorage.getItem('tarn.install.want') === '1') {
+        sessionStorage.removeItem('tarn.install.want')
+        setOpen(true)
+      }
+    } catch {
+      // Ignore.
+    }
+  }, [state.installed])
+
   useEffect(() => {
     if (!eligible) return
     let seen = false

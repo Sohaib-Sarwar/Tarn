@@ -46,13 +46,13 @@ export function Profile() {
   ]
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4 sm:space-y-5">
       {toast}
       <h1 className="sr-only">Profile</h1>
-      <section aria-label="You" className="relative overflow-hidden rounded-[2rem] bg-cream px-5 pt-8 pb-6 text-center shadow-soft">
+      <section aria-label="You" className="relative overflow-hidden rounded-[2rem] bg-cream px-5 pt-6 pb-5 text-center shadow-soft sm:pt-8 sm:pb-6">
         <div className="absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-sage-soft to-transparent" aria-hidden />
         <div className="relative mx-auto w-fit">
-          <Avatar size={96} />
+          <Avatar size={88} />
           <button type="button" onClick={() => setPanel('edit')} aria-label="Change photo" className="press absolute -right-1 -bottom-1 grid size-11 place-items-center rounded-full bg-forest text-cream shadow-soft">
             <Camera size={18} aria-hidden />
           </button>

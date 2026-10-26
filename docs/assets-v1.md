@@ -17,10 +17,12 @@
 | Item | Value |
 |---|---|
 | Balance before V1.2 | 6.70 credits (free plan) |
-| Balance after V1.2 | **4.15 credits** |
+| Balance after V1.2 | 4.15 credits |
 | **Spent in V1.2** | **2.55 credits across 17 paid calls** (Z Image, 0.15 each) |
 | Refused, not charged | 1 (GPT Image 2.5 needs a paid plan) |
-| Project total so far | 5.85 credits across 39 paid calls |
+| V1.3 logo (owner asked to redesign it with Higgsfield) | 0.45 credits, 3 calls (three leaf options, option A chosen) |
+| Balance now | **3.70 credits** |
+| Project total so far | 6.30 credits across 42 paid calls |
 
 ## Every V1.2 generation
 
@@ -40,6 +42,17 @@ Prompts are in `scripts/generate-art.sh`. No videos, upscales or text in images.
 development step only: the app never calls Higgsfield, and no user data (names, ages, GOI, journal,
 history) was ever part of a prompt.
 
+## V1.3 logo
+
+| Asset | Model | Outcome | Credits |
+|---|---|---|---|
+| Leaf on a still water ripple (option A) | Z Image 1:1 | **Used**: logo, app icons, favicon, QR centre | 0.15 |
+| Two overlapping leaves (option B) | Z Image 1:1 | Not used | 0.15 |
+| Leaf with a lake inside (option C) | Z Image 1:1 | Not used, too detailed at icon size | 0.15 |
+
+Prompts are in `scripts/generate-logo.sh`. The V1.2 sun and peaks logo is kept as
+`assets-source/higgsfield/logo-v12-original.webp`. Icons now sit on a white tile.
+
 ## Storage and processing
 
 | Path | What |
@@ -47,9 +60,10 @@ history) was ever part of a prompt.
 | `assets-source/higgsfield/*-original.webp` | Every original, archived as visually lossless WebP (quality 92), so nothing depends on Higgsfield URLs |
 | `scripts/process-art.mjs` (`npm run art`) | Builds everything below from the originals |
 | `public/art/dawn-*.webp`, `public/art/calm-dusk-*.webp` | Backgrounds, 1920 px wide or 1080 px tall, quality 74, slightly desaturated for restful contrast |
-| `public/art/logo-192.webp`, `public/favicon.png`, `public/icons/*` | Logo emblem cut from its paper backdrop by colour saturation, placed on an even cream tile; 192, 512, maskable 512 (20% safe padding), Apple touch 180, favicon 64 |
+| `public/art/logo-192.webp`, `public/favicon.png`, `public/icons/*` | Leaf emblem cut from its backdrop by colour saturation, placed on a white tile; 192, 512, maskable 512 (20% safe padding), Apple touch 180, favicon 64 |
 | `public/art/badges/<milestone>.webp` | Ten milestone pins, cut out as clean circles (largest saturated region, circular mask), 192 px |
 | `public/og.jpg` (`npm run og`) | Social preview from the dawn scene and the logo |
+| `public/qr-install.png` (`npm run qr`) | Install QR for the desktop landing; opens `https://tarn-rehab.vercel.app/?install=1`; leaf in the centre; checked to decode with jsQR |
 
 Practice badges (Urge Surfer, Honest Reset, and so on) stay as SVG line glyphs, and every image has
 an SVG fallback drawn in `src/components/Art.tsx`, so a missing file never leaves a blank space.

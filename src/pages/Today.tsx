@@ -45,7 +45,7 @@ export function Today() {
   const checkin = data.checkins.find((c) => c.date === today)
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4 sm:space-y-5">
       {toast}
       <div className="pt-2 lg:pt-0">
         <h1 className="serif text-[1.9rem] leading-tight break-words text-ink sm:text-[2.2rem]">
@@ -55,15 +55,15 @@ export function Today() {
         <p className="mt-1 text-ink-soft">One day at a time.</p>
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-start lg:gap-8">
-        <div className="space-y-5">
-          <section aria-label="Progress" className="relative isolate flex flex-col items-center overflow-hidden rounded-[2rem] bg-cream px-5 pt-6 pb-20 shadow-soft">
-            <Scenery variant="dawn" className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-32 opacity-80 [mask-image:linear-gradient(to_bottom,transparent,black_55%)] dark:hidden" />
-            <Scenery variant="dusk" className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 hidden h-32 opacity-90 [mask-image:linear-gradient(to_bottom,transparent,black_55%)] dark:block" />
+      <div className="grid gap-4 sm:gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-start lg:gap-8">
+        <div className="space-y-4 sm:space-y-5">
+          <section aria-label="Progress" className="relative isolate flex flex-col items-center overflow-hidden rounded-[2rem] bg-cream px-5 pt-5 pb-14 shadow-soft sm:pt-6 sm:pb-20">
+            <Scenery variant="dawn" className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-16 opacity-70 [mask-image:linear-gradient(to_bottom,transparent,black_70%)] sm:h-24 dark:hidden" />
+            <Scenery variant="dusk" className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 hidden h-16 opacity-80 [mask-image:linear-gradient(to_bottom,transparent,black_70%)] sm:h-24 dark:block" />
             <GoalTabs goals={goals} value={goal.id} onChange={setGoal} />
             <div className={goals.length > 1 ? 'mt-4' : ''}>
               <Ring
-                size={220}
+                size={196}
                 progress={ringProgress}
                 label={`${goal.label}: day ${s.runDay}, current streak ${s.currentStreak} ${s.currentStreak === 1 ? 'day' : 'days'}${goal.targetDays ? `, ${Math.min(s.currentStreak, goal.targetDays)} of ${goal.targetDays} day stretch` : ''}`}
               >
@@ -83,7 +83,7 @@ export function Today() {
             <p className="serif mt-3 text-lg text-ink-soft italic">{s.runDay === 0 ? 'Keep what you learned.' : DAY_LINES[s.runDay % DAY_LINES.length]}</p>
           </section>
 
-          <section aria-label="Stretch progress" className="rounded-[1.75rem] border border-stone/80 bg-cream p-5">
+          <section aria-label="Stretch progress" className="rounded-[1.75rem] border border-stone/80 bg-cream p-4 sm:p-5">
             <StretchTrack streak={s.currentStreak} target={goal.targetDays} label={goal.targetDays ? `YOUR ${goal.targetDays} DAY STRETCH` : 'NEXT MILESTONE'} />
             <div className="mt-4 grid grid-cols-3 gap-2 border-t border-stone pt-4 text-center">
               <div>
@@ -167,7 +167,7 @@ export function Today() {
             )}
           </section>
 
-          <Link to="journey" className="press flex min-h-11 items-center justify-center gap-1.5 text-sm font-semibold text-forest">
+          <Link to="journey" className="press hidden min-h-11 items-center justify-center gap-1.5 text-sm font-semibold text-forest lg:flex">
             See your journey <ArrowRight size={16} aria-hidden />
           </Link>
         </div>

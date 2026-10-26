@@ -189,7 +189,7 @@ export function emptyProfile(now = new Date()): Profile {
     ageRange: null,
     goiNote: null,
     photo: null,
-    theme: 'system',
+    theme: 'light',
     termsAcceptedAt: null,
     wants: [],
     reason: '',

@@ -2,7 +2,7 @@
 // The choice is mirrored here from the app (a per browser convenience); records stay in IndexedDB.
 ;(function () {
   try {
-    var t = localStorage.getItem('tarn.theme') || 'system'
+    var t = localStorage.getItem('tarn.theme') || 'light'
     var dark = t === 'dark' || (t === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)
     document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light')
   } catch (e) {

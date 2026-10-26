@@ -59,7 +59,7 @@ export function Journal() {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4 sm:space-y-5">
       {toast}
       <div className="pt-2 lg:pt-0">
         <h1 className="serif text-[1.9rem] leading-tight text-ink sm:text-[2.2rem]">Journal</h1>
@@ -68,7 +68,7 @@ export function Journal() {
         </p>
       </div>
 
-      <section aria-label="New entry" className="rounded-[1.75rem] border border-stone/80 bg-cream p-5">
+      <section aria-label="New entry" className="rounded-[1.75rem] border border-stone/80 bg-cream p-4 sm:p-5">
         <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Kind of entry">
           {KINDS.map((k) => (
             <Chip key={k.id} role="radio" selected={kind === k.id} onClick={() => setKind(k.id)}>
@@ -78,7 +78,7 @@ export function Journal() {
         </div>
         <p className="serif mt-5 text-xl leading-snug text-ink">{prompt.question}</p>
         <div className="mt-3">
-          <TextArea label="Your words" value={text} onChange={setText} rows={5} max={4000} placeholder="A sentence is enough." />
+          <TextArea label="Your words" value={text} onChange={setText} rows={4} max={4000} placeholder="A sentence is enough." />
         </div>
         <p id="j-mood" className="mt-4 text-sm font-semibold text-ink">
           Mood <span className="font-normal text-ink-soft">(optional)</span>

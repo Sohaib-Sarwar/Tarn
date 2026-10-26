@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /today
+Disallow: /journey
+Disallow: /journal
+Disallow: /profile
+Disallow: /calm
+Disallow: /start
+
+Sitemap: https://tarn-rehab.vercel.app/sitemap.xml

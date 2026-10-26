@@ -10,6 +10,12 @@ import { captureHandoff } from './handoff'
 initInstall()
 // A GOONOMICS link may carry an opt in age range and GOI in the fragment; read it once, then drop it.
 captureHandoff()
+// The landing QR opens Tarn with ?install=1: remember the wish so Today can show the install steps.
+try {
+  if (new URLSearchParams(window.location.search).get('install') === '1') sessionStorage.setItem('tarn.install.want', '1')
+} catch {
+  // Storage blocked: the landing still opens its install sheet from the URL.
+}
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

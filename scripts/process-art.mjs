@@ -43,8 +43,8 @@ for (const [name, width] of [
 // Logo: trim the flat backdrop, centre the emblem on a forest tile, export icons.
 const logo = await source('logo')
 if (logo) {
-  // Key the generated backdrop out entirely, then place the emblem on one even cream tile.
-  const bgc = { r: 242, g: 238, b: 228, alpha: 1 }
+  // Cut the leaf from its generated backdrop, then place it on a clean white tile.
+  const bgc = { r: 255, g: 255, b: 255, alpha: 1 }
   const emblem = await emblemCut(logo)
   const tile = async (size, pad, rounded) => {
     const inner = Math.round(size * (1 - pad * 2))
@@ -76,7 +76,7 @@ async function emblemCut(input) {
     const r = data[i * 4], g = data[i * 4 + 1], b = data[i * 4 + 2]
     const max = Math.max(r, g, b), min = Math.min(r, g, b)
     const s = max ? (max - min) / max : 0
-    const a = Math.max(0, Math.min(1, (s - 0.14) / 0.12))
+    const a = Math.max(0, Math.min(1, (s - 0.26) / 0.1))
     data[i * 4 + 3] = Math.round(a * 255)
     if (a > 0.5) {
       const x = i % w, y = (i / w) | 0

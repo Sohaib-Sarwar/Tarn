@@ -75,7 +75,7 @@ export function Shell({ route, children }: { route: Route; children: ReactNode }
         </main>
 
         <nav aria-label="Main" className="bottom-safe fixed inset-x-0 z-40 flex justify-center px-3 lg:hidden">
-          <ul className="glass grid w-full max-w-[26rem] grid-cols-5 gap-0.5 rounded-full p-1.5">
+          <ul className="glass grid w-full max-w-[25rem] grid-cols-5 gap-0.5 rounded-full p-1.5">
             {NAV.map(({ to, label, icon: Icon }) => {
               const active = route === to
               return (
@@ -84,7 +84,7 @@ export function Shell({ route, children }: { route: Route; children: ReactNode }
                     to={to}
                     aria-current={active ? 'page' : undefined}
                     className={`press flex min-h-[3.4rem] flex-col items-center justify-center gap-0.5 rounded-full text-[0.68rem] font-semibold ${
-                      active ? 'bg-ink/[0.08] text-ink' : 'text-ink-soft hover:text-ink'
+                      active ? 'bg-white/75 text-ink shadow-[inset_0_1px_0_rgb(255_255_255/0.95),0_3px_10px_-4px_rgb(0_0_0/0.28)] dark:bg-white/[0.13] dark:shadow-[inset_0_1px_0_rgb(255_255_255/0.12)]' : 'text-ink-soft hover:text-ink'
                     }`}
                   >
                     <Icon size={21} aria-hidden strokeWidth={active ? 2.2 : 1.8} className={to === 'calm' ? 'text-forest' : ''} />

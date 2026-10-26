@@ -143,6 +143,20 @@ describe('landing and onboarding', () => {
     writeHandoff({ ageRange: null, goi: null })
   })
 
+  it('the landing is white and light by default, even when the device prefers dark', async () => {
+    document.documentElement.setAttribute('data-theme', 'dark')
+    await boot()
+    await screen.findByRole('heading', { level: 1, name: 'Come back to yourself.' })
+    expect(document.documentElement.getAttribute('data-theme')).toBe('light')
+  })
+
+  it('opening Tarn from the install QR shows the install steps', async () => {
+    at('/?install=1')
+    await boot()
+    const sheet = await screen.findByRole('dialog', { name: 'Install Tarn' })
+    expect(within(sheet).getByText(/Open your daily practice from your Home Screen/)).toBeInTheDocument()
+  })
+
   it('the terms page is reachable before onboarding', async () => {
     at('/terms')
     await boot()

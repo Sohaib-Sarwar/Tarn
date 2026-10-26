@@ -25,10 +25,10 @@ const SEGMENTS: { id: Segment; label: string }[] = [
 export function Journey() {
   const [segment, setSegment] = useState<Segment>('progress')
   return (
-    <div className="space-y-5">
+    <div className="space-y-4 sm:space-y-5">
       <div className="pt-2 lg:pt-0">
         <h1 className="serif text-[1.9rem] leading-tight text-ink sm:text-[2.2rem]">Your journey</h1>
-        <p className="mt-1 text-ink-soft">Everything you have built stays here, resets included.</p>
+        <p className="mt-1 hidden text-ink-soft sm:block">Everything you have built stays here, resets included.</p>
       </div>
       <div role="tablist" aria-label="Journey sections" className="grid grid-cols-3 gap-1 rounded-full border border-stone bg-cream p-1 sm:max-w-sm">
         {SEGMENTS.map((s) => (
@@ -79,7 +79,7 @@ function Progress() {
   const earned = [...milestones, ...practice].filter((b) => b.earned)
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4 sm:space-y-5">
       {toast}
       <GoalTabs goals={goals} value={goal.id} onChange={setGoal} />
       <Card>
@@ -199,7 +199,7 @@ function Progress() {
 
 function Insights() {
   return (
-    <div className="space-y-5">
+    <div className="space-y-4 sm:space-y-5">
       <Patterns />
       <Link to="journal" className="press flex min-h-14 items-center justify-between gap-3 rounded-[1.75rem] border border-stone/80 bg-cream px-5 font-semibold text-forest">
         Write in your journal <ArrowRight size={18} aria-hidden />
