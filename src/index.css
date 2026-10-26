@@ -1,0 +1,166 @@
+@import 'tailwindcss';
+
+/* Dark mode follows the data-theme attribute set from the person's choice (System, Light, Dark). */
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+/*
+ * Tarn tokens. Every component uses these names, so a theme only redefines them.
+ * The light theme is deliberately low glare: an oatmeal page, soft sage surfaces and muted ink,
+ * instead of bright white. parchment is the page, cream the cards, forest the action color,
+ * gold marks earned things only. dusk, dusk-2 and snow stay the same in both themes (Calm screen).
+ */
+@theme {
+  --color-parchment: #e7e5dd;
+  --color-cream: #f0eee8;
+  --color-forest: #2f5a47;
+  --color-forest-deep: #24483a;
+  --color-sage: #9cb49b;
+  --color-sage-soft: #dbe3d6;
+  --color-moss: #6e8a6a;
+  --color-stone: #d1cfc5;
+  --color-stone-soft: #e0ded5;
+  --color-ink: #26302a;
+  --color-ink-soft: #536058;
+  --color-gold: #b39560;
+  --color-gold-soft: #e7dcc5;
+  --color-clay: #9c5e49;
+  --color-clay-soft: #ecd9d0;
+  --color-dusk: #151e1a;
+  --color-dusk-2: #22302a;
+  --color-snow: #e9ece4;
+  --color-pine: #24483a;
+
+  --font-serif: 'Newsreader Variable', 'Iowan Old Style', Georgia, serif;
+  --font-sans: 'Hanken Grotesk Variable', ui-sans-serif, system-ui, sans-serif;
+
+  --shadow-soft: 0 1px 2px rgb(20 28 24 / 0.05), 0 10px 28px -14px rgb(20 28 24 / 0.22);
+
+  --animate-rise: rise 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  --animate-fade: fade 0.8s ease both;
+
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes fade {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+}
+
+/* Night palette: deep forest greys, soft light text, a lighter sage as the action color. */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --color-parchment: #121916;
+  --color-cream: #19221e;
+  --color-forest: #8fb89e;
+  --color-forest-deep: #a6c8b2;
+  --color-sage: #4b6855;
+  --color-sage-soft: #213029;
+  --color-moss: #87a38d;
+  --color-stone: #2b3731;
+  --color-stone-soft: #202a25;
+  --color-ink: #dfe5dc;
+  --color-ink-soft: #a2ada3;
+  --color-gold: #c8ad77;
+  --color-gold-soft: #2c291e;
+  --color-clay: #d39079;
+  --color-clay-soft: #33241f;
+  --shadow-soft: 0 1px 2px rgb(0 0 0 / 0.3), 0 12px 30px -14px rgb(0 0 0 / 0.6);
+}
+
+:root {
+  color-scheme: light;
+}
+
+html {
+  background: var(--color-parchment);
+  color: var(--color-ink);
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  margin: 0;
+  background: var(--color-parchment);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  transition: background-color 0.3s ease;
+}
+::selection {
+  background: var(--color-sage);
+  color: var(--color-ink);
+}
+:focus-visible {
+  outline: 2px solid var(--color-forest);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+.serif {
+  font-family: var(--font-serif);
+  font-optical-sizing: auto;
+}
+.press {
+  transition: transform 0.15s ease, background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+.press:active {
+  transform: scale(0.98);
+}
+
+/*
+ * The floating tab bar is the only translucent surface (Apple HIG: glass belongs to the navigation
+ * layer, used sparingly). It follows the theme, and becomes solid when backdrop-filter is missing or
+ * the person prefers less transparency or more contrast.
+ */
+.glass {
+  background: var(--color-cream);
+  border: 1px solid color-mix(in oklab, var(--color-stone) 85%, transparent);
+  box-shadow: 0 1px 1px rgb(0 0 0 / 0.04), 0 14px 34px -12px rgb(0 0 0 / 0.32);
+}
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass {
+    background: color-mix(in oklab, var(--color-cream) 70%, transparent);
+    -webkit-backdrop-filter: blur(20px) saturate(1.5);
+    backdrop-filter: blur(20px) saturate(1.5);
+  }
+}
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  .glass {
+    background: var(--color-cream);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    border-color: var(--color-moss);
+  }
+}
+
+.pb-safe {
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+}
+.pt-safe {
+  padding-top: env(safe-area-inset-top);
+}
+.bottom-safe {
+  bottom: max(0.75rem, env(safe-area-inset-bottom));
+}
+/* Room so the floating bar never covers the end of a page. */
+.pad-nav {
+  padding-bottom: calc(6.75rem + env(safe-area-inset-bottom));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
